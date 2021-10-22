@@ -19,6 +19,16 @@ public class EnemyVision : MonoBehaviour {
         }
     }
 
+    struct PointPair {
+        public Vector3 pointA;
+        public Vector3 pointB;
+
+        public PointPair(Vector3 _pointA, Vector3 _pointB) {
+            pointA = _pointA;
+            pointB = _pointB;
+        }
+    }
+
     public float visionRange = 2f;
     [Range(0f, 360f)]
     public float visionAngle = 45f;
@@ -28,9 +38,11 @@ public class EnemyVision : MonoBehaviour {
     [SerializeField] LayerMask obstacleMask;
     [SerializeField] float rotationSpeed = 45f;
     [SerializeField] float targetDetectionFreq = 0.2f;
-    [SerializeField] int visionResolution = 10;
+    [SerializeField] float visionResolution = 1f;
     [SerializeField] MeshFilter visionConeMeshFilter;
     Mesh visionConeMesh;
+    [SerializeField] int edgeIdIterations = 6;
+    [SerializeField] float maxRaycastDst = 0.5f;
 
     private void Start() {
         visionConeMesh = new Mesh();
@@ -97,13 +109,26 @@ public class EnemyVision : MonoBehaviour {
     }
 
     private void DrawVisionCone() {
-        float _stepAngleSize = visionAngle / visionResolution;
+        int _stepCount = Mathf.RoundToInt(visionAngle * visionResolution);
+        float _stepAngleSize = visionAngle / _stepCount;
+        ViewCastInfo _oldViewCast = new ViewCastInfo();
         List<Vector3> _viewPoints = new List<Vector3>();
 
-        for (int i = 0; i < visionResolution + 1; i++) {
+        for (int i = 0; i < _stepCount + 1; i++) {
             float _angle = transform.eulerAngles.y - (visionAngle / 2) + i * _stepAngleSize;
-            ViewCastInfo newViewCast = ViewCast(_angle);
-            _viewPoints.Add(newViewCast.point);
+            ViewCastInfo _newViewCast = ViewCast(_angle);
+
+            if (i > 0) {
+                bool _maxDstExceeded = Mathf.Abs(_oldViewCast.distance - _newViewCast.distance) > maxRaycastDst;
+                if (_newViewCast.hit != _oldViewCast.hit || (_oldViewCast.hit && _newViewCast.hit && _maxDstExceeded)) {
+                    PointPair _edgePoints = FindEdge(_oldViewCast, _newViewCast);
+                    _viewPoints.Add(_edgePoints.pointA);
+                    _viewPoints.Add(_edgePoints.pointB);
+                }
+            }
+
+            _viewPoints.Add(_newViewCast.point);
+            _oldViewCast = _newViewCast;
         }
 
         int _vertexCount = _viewPoints.Count + 1;
@@ -113,6 +138,7 @@ public class EnemyVision : MonoBehaviour {
 
         for (int i = 0; i < _vertexCount - 1; i++) {
             _vertices[i + 1] = transform.InverseTransformPoint(_viewPoints[i]);
+            Debug.DrawLine(transform.position, _viewPoints[i], Color.black);
 
             if (i < _vertexCount - 2) {
                 _triangles[3*i] = 0;
@@ -125,6 +151,24 @@ public class EnemyVision : MonoBehaviour {
         visionConeMesh.vertices = _vertices;
         visionConeMesh.triangles = _triangles;
         visionConeMesh.RecalculateNormals();
+    }
+
+    private PointPair FindEdge(ViewCastInfo _vcInfoA, ViewCastInfo _vcInfoB) {
+        ViewCastInfo _vcMin = _vcInfoA;
+        ViewCastInfo _vcMax = _vcInfoB;
+
+        for (int i = 0; i < edgeIdIterations; i++) {
+            ViewCastInfo _vcMid = ViewCast((_vcMin.angle + _vcMax.angle) / 2);
+                bool _maxDstExceeded = Mathf.Abs(_vcMin.distance - _vcMid.distance) > maxRaycastDst;
+            if (_vcMid.hit == _vcMin.hit && !_maxDstExceeded) {
+                _vcMin = _vcMid;
+            }
+            else {
+                _vcMax = _vcMid;
+            }
+        }
+
+        return new PointPair(_vcMin.point, _vcMax.point);
     }
 
     public Vector3 DirFromAngle(float _angleInDegrees, bool _angleIsGlobal) {
