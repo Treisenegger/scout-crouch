@@ -5,45 +5,30 @@ using UnityEngine;
 // TODO: Move rotation/movement to an enemy movement controller
 public class EnemyVision : MonoBehaviour {
 
-    struct ViewCastInfo {
-        public bool hit;
-        public Vector3 point;
-        public float distance;
-        public float angle;
-
-        public ViewCastInfo(bool _hit, Vector3 _point, float _distance, float _angle) {
-            hit = _hit;
-            point = _point;
-            distance = _distance;
-            angle = _angle;
-        }
-    }
-
-    struct PointPair {
-        public Vector3 pointA;
-        public Vector3 pointB;
-
-        public PointPair(Vector3 _pointA, Vector3 _pointB) {
-            pointA = _pointA;
-            pointB = _pointB;
-        }
-    }
-
-    public float visionRange = 2f;
+    [Header("Vision Geometry Parameters")]
+    [SerializeField] float visionRange = 4f;
     [Range(0f, 360f)]
-    public float visionAngle = 45f;
-    public bool isAlerted = false;
+    [SerializeField] float visionAngle = 45f;
 
+    [Header("Collision Information")]
     [SerializeField] LayerMask playerMask;
     [SerializeField] LayerMask obstacleMask;
-    [SerializeField] float rotationSpeed = 45f;
+
+    [Header("Vision Cone Detection Parameters")]
     [SerializeField] float targetDetectionFreq = 0.2f;
+
+    [Header("Vision Cone Rendering Parameters")]
     [SerializeField] float visionResolution = 1f;
-    [SerializeField] MeshFilter visionConeMeshFilter;
-    Mesh visionConeMesh;
     [SerializeField] int edgeIdIterations = 6;
     [SerializeField] float maxRaycastDst = 0.5f;
+    [SerializeField] Color defaultColor = new Color(1f, 1f, 1f, 0.5f);
+    [SerializeField] Color alertedColor = new Color(1f, 0f, 0f, 0.5f);
+    [SerializeField] MeshFilter visionConeMeshFilter;
     [SerializeField] Transform visionConeBase;
+    [SerializeField] Material meshMaterial;
+
+    Mesh visionConeMesh;
+    bool isAlerted = false;
 
     private void Start() {
         visionConeMesh = new Mesh();
@@ -57,8 +42,12 @@ public class EnemyVision : MonoBehaviour {
         DrawVisionCone();
     }
 
-    private void FixedUpdate() {
-        transform.Rotate(new Vector3(0f, rotationSpeed * Time.fixedDeltaTime, 0f));
+    public Vector3 DirFromAngle(float _angleInDegrees, bool _angleIsGlobal) {
+        if (!_angleIsGlobal) {
+            _angleInDegrees += transform.eulerAngles.y;
+        }
+        float _angleInRad = _angleInDegrees * Mathf.Deg2Rad;
+        return new Vector3(Mathf.Sin(_angleInRad), 0f, Mathf.Cos(_angleInRad));
     }
 
     private IEnumerator InitiatePlayerDetection() {
@@ -72,7 +61,7 @@ public class EnemyVision : MonoBehaviour {
         // Determine if a player is in radius
         Collider[] _detectedPlayers = Physics.OverlapSphere(transform.position, visionRange, playerMask);
         if (_detectedPlayers.Length == 0) {
-            isAlerted = false;
+            SetAlerted(false);
             return;
         }
 
@@ -81,7 +70,7 @@ public class EnemyVision : MonoBehaviour {
         Vector3 _directionToPlayer = (_player.transform.position - transform.position).normalized;
         float _angleToPlayer = Mathf.Abs(Vector3.Angle(transform.forward, _directionToPlayer));
         if (_angleToPlayer > visionAngle / 2) {
-            isAlerted = false;
+            SetAlerted(false);
             return;
         }
 
@@ -89,24 +78,16 @@ public class EnemyVision : MonoBehaviour {
         float _distanceToPlayer = Vector3.Distance(transform.position, _player.transform.position);
         bool _occluded = Physics.Raycast(transform.position, _directionToPlayer, _distanceToPlayer, obstacleMask);
         if (_occluded) {
-            isAlerted = false;
+            SetAlerted(false);
         }
         else {
-            isAlerted = true;
+            SetAlerted(true);
         }
     }
 
-    private ViewCastInfo ViewCast(float _globalAngle) {
-        Vector3 _dir = DirFromAngle(_globalAngle, true);
-        RaycastHit _hit;
-
-        bool _collided = Physics.Raycast(transform.position, _dir, out _hit, visionRange, obstacleMask);
-        if (_collided) {
-            return new ViewCastInfo(true, _hit.point, _hit.distance, _globalAngle);
-        }
-        else {
-            return new ViewCastInfo(false, transform.position + _dir * visionRange, visionRange, _globalAngle);
-        }
+    private void SetAlerted(bool _isAlerted) {
+        isAlerted = _isAlerted;
+        meshMaterial.SetColor("_Color", isAlerted ? alertedColor : defaultColor);
     }
 
     private void DrawVisionCone() {
@@ -173,11 +154,40 @@ public class EnemyVision : MonoBehaviour {
         return new PointPair(_vcMin.point, _vcMax.point);
     }
 
-    public Vector3 DirFromAngle(float _angleInDegrees, bool _angleIsGlobal) {
-        if (!_angleIsGlobal) {
-            _angleInDegrees += transform.eulerAngles.y;
+    struct PointPair {
+        public Vector3 pointA;
+        public Vector3 pointB;
+
+        public PointPair(Vector3 _pointA, Vector3 _pointB) {
+            pointA = _pointA;
+            pointB = _pointB;
         }
-        float _angleInRad = _angleInDegrees * Mathf.Deg2Rad;
-        return new Vector3(Mathf.Sin(_angleInRad), 0f, Mathf.Cos(_angleInRad));
+    }
+
+    private ViewCastInfo ViewCast(float _globalAngle) {
+        Vector3 _dir = DirFromAngle(_globalAngle, true);
+        RaycastHit _hit;
+
+        bool _collided = Physics.Raycast(transform.position, _dir, out _hit, visionRange, obstacleMask);
+        if (_collided) {
+            return new ViewCastInfo(true, _hit.point, _hit.distance, _globalAngle);
+        }
+        else {
+            return new ViewCastInfo(false, transform.position + _dir * visionRange, visionRange, _globalAngle);
+        }
+    }
+
+    struct ViewCastInfo {
+        public bool hit;
+        public Vector3 point;
+        public float distance;
+        public float angle;
+
+        public ViewCastInfo(bool _hit, Vector3 _point, float _distance, float _angle) {
+            hit = _hit;
+            point = _point;
+            distance = _distance;
+            angle = _angle;
+        }
     }
 }
