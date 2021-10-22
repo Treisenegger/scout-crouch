@@ -43,6 +43,7 @@ public class EnemyVision : MonoBehaviour {
     Mesh visionConeMesh;
     [SerializeField] int edgeIdIterations = 6;
     [SerializeField] float maxRaycastDst = 0.5f;
+    [SerializeField] Transform visionConeBase;
 
     private void Start() {
         visionConeMesh = new Mesh();
@@ -134,11 +135,12 @@ public class EnemyVision : MonoBehaviour {
         int _vertexCount = _viewPoints.Count + 1;
         Vector3[] _vertices = new Vector3[_vertexCount];
         int[] _triangles = new int[(_vertexCount - 2) * 3];
-        _vertices[0] = Vector3.zero;
+        Debug.Log(visionConeBase.position);
+        _vertices[0] = visionConeBase.localPosition;
 
         for (int i = 0; i < _vertexCount - 1; i++) {
-            _vertices[i + 1] = transform.InverseTransformPoint(_viewPoints[i]);
-            Debug.DrawLine(transform.position, _viewPoints[i], Color.black);
+            _vertices[i + 1] = transform.InverseTransformPoint(_viewPoints[i]) + visionConeBase.localPosition;
+            // Debug.DrawLine(transform.position, _viewPoints[i], Color.black);
 
             if (i < _vertexCount - 2) {
                 _triangles[3*i] = 0;
