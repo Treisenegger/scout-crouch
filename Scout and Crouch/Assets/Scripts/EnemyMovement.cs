@@ -9,7 +9,7 @@ public class EnemyMovement : MonoBehaviour {
     [SerializeField] float rotationSpeed = 10f;
 
     [Header("Path Parameters")]
-    [SerializeField] Transform[] pathPoints;
+    [SerializeField] Vector2[] pathPoints;
     [SerializeField] int currentPathIndex = 0;
 
     Rigidbody rb;
@@ -38,19 +38,22 @@ public class EnemyMovement : MonoBehaviour {
         Rotate();
     }
 
+    // Determine next destination in path
     private void SetNewDestination() {
         // Set new destination
-        currentDestination = pathPoints[currentPathIndex].position;
-        currentDestination.y = transform.position.y; // Make sure path points are at same height as enemy
+        Vector2 _nextPoint = pathPoints[currentPathIndex];
+        currentDestination = new Vector3(_nextPoint.x, transform.position.y, _nextPoint.y);
 
         velocityDir = (currentDestination - transform.position).normalized;
     }
 
+    // Move towards current destination
     private void Move() {
         Vector3 _movementVector = velocityDir * movementSpeed * Time.fixedDeltaTime;
         rb.MovePosition(rb.position + _movementVector);
     }
     
+    // Set rotation in line with movement direction
     private void Rotate() {
         if (transform.forward == velocityDir) {
             return;
@@ -64,6 +67,15 @@ public class EnemyMovement : MonoBehaviour {
         }
         else {
             rb.MoveRotation(transform.rotation * Quaternion.Euler(0f, Mathf.Sign(_angle) * rotationSpeed * Time.fixedDeltaTime, 0f));
+        }
+    }
+
+    // Visualize enemy path
+    private void OnDrawGizmos() {
+        foreach (Vector2 _point in pathPoints) {
+            Vector3 _sphereCenter = new Vector3(_point.x, 0f, _point.y);
+            Gizmos.color = Color.cyan;
+            Gizmos.DrawSphere(_sphereCenter, 0.1f);
         }
     }
 }

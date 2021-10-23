@@ -26,7 +26,7 @@ Shader "Unlit/ViewCone"
 
             #include "UnityCG.cginc"
 
-            #define USE_WORLD_POS 0
+            #define USE_WORLD_POS 1
 
             struct MeshData
             {
