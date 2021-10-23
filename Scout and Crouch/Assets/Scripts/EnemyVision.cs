@@ -10,7 +10,7 @@ public class EnemyVision : MonoBehaviour {
     [Range(0f, 360f)]
     [SerializeField] float visionAngle = 45f;
 
-    [Header("Collision Information")]
+    [Header("Collision Parameters")]
     [SerializeField] LayerMask playerMask;
     [SerializeField] LayerMask obstacleMask;
 
@@ -116,7 +116,7 @@ public class EnemyVision : MonoBehaviour {
         int _vertexCount = _viewPoints.Count + 1;
         Vector3[] _vertices = new Vector3[_vertexCount];
         int[] _triangles = new int[(_vertexCount - 2) * 3];
-        Debug.Log(visionConeBase.position);
+        // Debug.Log(visionConeBase.position);
         _vertices[0] = visionConeBase.localPosition;
 
         for (int i = 0; i < _vertexCount - 1; i++) {
