@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 [RequireComponent(typeof(Rigidbody))]
+[RequireComponent(typeof(EnemyVision))]
 public class EnemyMovement : MonoBehaviour {
     [Header("Movement Parameters")]
     [SerializeField] float movementSpeed = 6f;
@@ -13,6 +14,7 @@ public class EnemyMovement : MonoBehaviour {
     [SerializeField] int currentPathIndex = 0;
 
     Rigidbody rb;
+    EnemyVision ev;
     Vector3 velocityDir;
     Vector3 currentDestination;
 
