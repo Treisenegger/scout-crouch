@@ -21,7 +21,7 @@ public class MovementGrid : MonoBehaviour {
 
     float realNodeWidth, realNodeHeight;
 
-    private void Start() {
+    private void Awake() {
         gridWidth = Mathf.RoundToInt(width / nodeWidth);
         gridHeight = Mathf.RoundToInt(height / nodeWidth);
         realNodeWidth = width / gridWidth;

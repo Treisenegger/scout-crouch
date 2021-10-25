@@ -5,9 +5,11 @@ using UnityEngine;
 
 [RequireComponent(typeof(MovementGrid))]
 public class Pathfinding : MonoBehaviour {
+    public static Pathfinding instance;
     MovementGrid movementGrid;
 
-    private void Start() {
+    private void Awake() {
+        instance = this;
         movementGrid = GetComponent<MovementGrid>();
     }
 
@@ -27,7 +29,7 @@ public class Pathfinding : MonoBehaviour {
             Node _currentNode = _openSet.Pop();
 
             if (_currentNode == _endNode) {
-                return ReconstructPath(_endNode);
+                return ReconstructPath(_startNode, _endNode, _endPos);
             }
 
             _closedSet.Add(_currentNode);
@@ -59,12 +61,15 @@ public class Pathfinding : MonoBehaviour {
         return new Vector2[0];
     }
 
-    private Vector2[] ReconstructPath(Node _endNode) {
+    private Vector2[] ReconstructPath(Node _startNode, Node _endNode, Vector3 _endPos) {
         List<Vector2> _pathList = new List<Vector2>();
+        _pathList.Add(new Vector2(_endPos.x, _endPos.z));
         Node _currentNode = _endNode;
 
         while (_currentNode != null) {
-            _pathList.Add(new Vector2(_currentNode.worldPos.x, _currentNode.worldPos.z));
+            if (_currentNode != _startNode && _currentNode != _endNode) {
+                _pathList.Add(new Vector2(_currentNode.worldPos.x, _currentNode.worldPos.z));
+            }
             _currentNode = _currentNode.parent;
         }
 
