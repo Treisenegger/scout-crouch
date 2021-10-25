@@ -20,39 +20,31 @@ public class EnemyMovement : MonoBehaviour {
 
     private void Start() {
         rb = GetComponent<Rigidbody>();
+        ev = GetComponent<EnemyVision>();
 
         SetNewDestination();
     }
 
     private void FixedUpdate() {
-        float _distance = Vector3.Distance(transform.position, currentDestination);
-        bool _inRangeOfDestination = _distance < movementSpeed * Time.fixedDeltaTime;
-
-        if (_inRangeOfDestination) {
-            rb.MovePosition(currentDestination);
+        if (rb.position == currentDestination) {
             currentPathIndex = (currentPathIndex + 1) % pathPoints.Length;
             SetNewDestination();
         }
-        else {
-            Move();
-        }
-
+        
+        Move();
         Rotate();
     }
 
     // Determine next destination in path
     private void SetNewDestination() {
-        // Set new destination
         Vector2 _nextPoint = pathPoints[currentPathIndex];
         currentDestination = new Vector3(_nextPoint.x, transform.position.y, _nextPoint.y);
-
         velocityDir = (currentDestination - transform.position).normalized;
     }
 
     // Move towards current destination
     private void Move() {
-        Vector3 _movementVector = velocityDir * movementSpeed * Time.fixedDeltaTime;
-        rb.MovePosition(rb.position + _movementVector);
+        rb.MovePosition(Vector3.MoveTowards(rb.position, currentDestination, movementSpeed * Time.fixedDeltaTime));
     }
     
     // Set rotation in line with movement direction
@@ -60,16 +52,7 @@ public class EnemyMovement : MonoBehaviour {
         if (transform.forward == velocityDir) {
             return;
         }
-
-        float _angle = Vector3.SignedAngle(transform.forward, velocityDir, Vector3.up);
-        bool _inRangeOfRotation = Mathf.Abs(_angle) < rotationSpeed * Time.fixedDeltaTime;
-
-        if (_inRangeOfRotation) {
-            transform.forward = velocityDir;
-        }
-        else {
-            rb.MoveRotation(transform.rotation * Quaternion.Euler(0f, Mathf.Sign(_angle) * rotationSpeed * Time.fixedDeltaTime, 0f));
-        }
+        rb.MoveRotation(Quaternion.RotateTowards(rb.rotation, Quaternion.LookRotation(velocityDir), rotationSpeed * Time.fixedDeltaTime));
     }
 
     // Visualize enemy path
