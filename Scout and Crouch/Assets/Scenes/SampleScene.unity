@@ -814,6 +814,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   movementSpeed: 1.5
   rotationSpeed: 180
+  investigationTurnDuration: 1.5
+  turnUpdateFreq: 0.03
   globalPath:
   - {x: 3.59, y: 2.46}
   - {x: -1.48, y: 0.5}

@@ -8,7 +8,8 @@ public class EnemyController : MonoBehaviour {
 
     [SerializeField] float movementSpeed = 3f;
     [SerializeField] float rotationSpeed = 180f;
-    // [SerializeField] float investigationTurnDuration = 2f;
+    [SerializeField] float investigationTurnDuration = 2f;
+    [SerializeField] float turnUpdateFreq = 0.05f;
     [SerializeField] Vector2[] globalPath;
     [SerializeField] MovementGrid movementGrid;
 
@@ -70,6 +71,7 @@ public class EnemyController : MonoBehaviour {
                     SetPathToGlobalWaypoint();
                 }
                 else if (investigating) {
+                    StartInvestigativeTurn();
                     status = Status.Normal;
                     SetPathToGlobalWaypoint();
                 }
@@ -112,16 +114,18 @@ public class EnemyController : MonoBehaviour {
     }
 
     private void Move() {
-        if (isMoving) {
-            Vector3 _from = transform.position;
-            Vector3 _to = currentDestination;
-            float _maxDist = movementSpeed * Time.fixedDeltaTime;
-            rb.MovePosition(Vector3.MoveTowards(_from, _to, _maxDist));
+        if (!isMoving) {
+            return;
         }
+
+        Vector3 _from = transform.position;
+        Vector3 _to = currentDestination;
+        float _maxDist = movementSpeed * Time.fixedDeltaTime;
+        rb.MovePosition(Vector3.MoveTowards(_from, _to, _maxDist));
     }
 
     private void RotateWithMovement() {
-        if (currentDestination == rb.position) {
+        if (!isMoving || currentDestination == rb.position) {
             return;
         }
 
@@ -159,6 +163,23 @@ public class EnemyController : MonoBehaviour {
         }
 
         status = _newStatus;
+    }
+
+    private void StartInvestigativeTurn() {
+        StartCoroutine(TurnAround(investigationTurnDuration));
+    }
+
+    private IEnumerator TurnAround(float _duration) {
+        float _turnSpeed = 360 / _duration;
+        float _angleTurned = 0f;
+        isMoving = false;
+        while (_angleTurned < 360f) {
+            yield return new WaitForSeconds(turnUpdateFreq);
+            float _turnAngle = turnUpdateFreq * _turnSpeed;
+            rb.MoveRotation(rb.rotation * Quaternion.Euler(0f, _turnAngle, 0f));
+            _angleTurned += _turnAngle;
+        }
+        isMoving = true;
     }
 
     private void OnDrawGizmos() {
