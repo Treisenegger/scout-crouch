@@ -73,8 +73,7 @@ public class Pathfinding : MonoBehaviour {
             _currentNode = _currentNode.parent;
         }
 
-        Vector2[] _pathArray = new Vector2[_pathList.Count];
-        _pathArray = _pathList.ToArray();
+        Vector2[] _pathArray = _pathList.ToArray();
         Array.Reverse(_pathArray);
 
         return _pathArray;

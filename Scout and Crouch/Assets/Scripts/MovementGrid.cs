@@ -8,6 +8,7 @@ public class MovementGrid : MonoBehaviour {
     [SerializeField] PlayerMovement player;
     [SerializeField] EnemyController enemy;
     [SerializeField] Pathfinding pathfinding;
+    [SerializeField] bool drawGizmos = false;
 
     [SerializeField] float width = 1f;
     [SerializeField] float height = 1f;
@@ -50,10 +51,12 @@ public class MovementGrid : MonoBehaviour {
     // Determine node adjacency based on line of sight
     private void InitializeEdgeInfo() {
         edges = new bool[gridWidth, gridHeight, gridWidth, gridHeight];
-        Vector3 _precisionLOSDisplacement1 = (Vector3.forward + Vector3.right).normalized * lineOfSightPrecision;
-        Vector3 _precisionLOSDisplacement2 = (-Vector3.forward + Vector3.right).normalized * lineOfSightPrecision;
-        Vector3 _precisionLOSDisplacement3 = -_precisionLOSDisplacement1;
-        Vector3 _precisionLOSDisplacement4 = -_precisionLOSDisplacement2;
+        Vector3[] _precisionLOSDisplacement = new Vector3[] {
+            (Vector3.forward + Vector3.right).normalized * lineOfSightPrecision,
+            (-Vector3.forward + Vector3.right).normalized * lineOfSightPrecision,
+            -(Vector3.forward + Vector3.right).normalized * lineOfSightPrecision,
+            -(-Vector3.forward + Vector3.right).normalized * lineOfSightPrecision
+        };
 
         foreach (Node _node1 in nodes) {
             foreach (Node _node2 in nodes) {
@@ -65,18 +68,16 @@ public class MovementGrid : MonoBehaviour {
                 Vector3 _targetDir = (_node2.worldPos - _node1.worldPos).normalized;
                 float _nodeDist = Vector3.Distance(_node1.worldPos, _node2.worldPos);
                 bool _visible = true;
-                
-                if (_visible) {
-                    _visible = !Physics.Raycast(_originPos + _precisionLOSDisplacement1, _targetDir, _nodeDist, obstacleMask);
-                }
-                if (_visible) {
-                    _visible = !Physics.Raycast(_originPos + _precisionLOSDisplacement2, _targetDir, _nodeDist, obstacleMask);
-                }
-                if (_visible) {
-                    _visible = !Physics.Raycast(_originPos + _precisionLOSDisplacement3, _targetDir, _nodeDist, obstacleMask);
-                }
-                if (_visible) {
-                    _visible = !Physics.Raycast(_originPos + _precisionLOSDisplacement4, _targetDir, _nodeDist, obstacleMask);
+
+                foreach (Vector3 _displacementVector in _precisionLOSDisplacement) {
+                    _visible = !Physics.Raycast(_originPos + _displacementVector, _targetDir, _nodeDist, obstacleMask);
+                    if (!_visible) {
+                        break;
+                    }
+                    _visible = !Physics.Raycast(_originPos + _displacementVector + _targetDir * _nodeDist, -_targetDir, _nodeDist, obstacleMask);
+                    if (!_visible) {
+                        break;
+                    }
                 }
 
                 if (_visible) {
@@ -101,15 +102,22 @@ public class MovementGrid : MonoBehaviour {
     }
 
     private void OnDrawGizmos() {
+        if (!drawGizmos) {
+            return;
+        }
+
         Gizmos.color = Color.white;
         Gizmos.DrawWireCube(transform.position, new Vector3(width, 1f, height));
         if (nodes != null) {
-            Node playerNode = GetNodeFromWorldPos(player.transform.position);
+            Node _playerNode = GetNodeFromWorldPos(player.transform.position);
+            Node _enemyNode = GetNodeFromWorldPos(enemy.transform.position);
             // Vector2Int[] _path = pathfinding.FindPath(player.transform.position, enemy.transform.position, 0f);
             foreach (Node _node in nodes) {
-                Gizmos.color = edges[playerNode.gridPos.x, playerNode.gridPos.y, _node.gridPos.x, _node.gridPos.y] ? Color.red : Color.white;
+                // Gizmos.color = edges[_playerNode.gridPos.x, _playerNode.gridPos.y, _node.gridPos.x, _node.gridPos.y] ? Color.red : Color.white;
+                Gizmos.color = edges[_enemyNode.gridPos.x, _enemyNode.gridPos.y, _node.gridPos.x, _node.gridPos.y] ? Color.red : Color.white;
                 // Gizmos.color = Array.IndexOf(_path, _node.gridPos) > -1 ? Color.red : Color.white;
-                Gizmos.DrawCube(_node.worldPos, new Vector3(realNodeWidth, 1f, realNodeHeight) * 0.9f);
+                // Gizmos.DrawCube(_node.worldPos, new Vector3(realNodeWidth, 1f, realNodeHeight) * 0.9f);
+                Gizmos.DrawSphere(_node.worldPos, lineOfSightPrecision);
             }
         }
     }

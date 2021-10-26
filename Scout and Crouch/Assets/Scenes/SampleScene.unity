@@ -818,8 +818,8 @@ MonoBehaviour:
   turnUpdateFreq: 0.03
   globalPath:
   - {x: 3.59, y: 2.46}
-  - {x: -1.48, y: 0.5}
-  - {x: -3.55, y: -3.45}
+  - {x: -1.48, y: -1.46}
+  - {x: -3.55, y: -1.44}
   movementGrid: {fileID: 1856860870}
 --- !u!114 &1523417765
 MonoBehaviour:
@@ -1120,6 +1120,7 @@ MonoBehaviour:
   player: {fileID: 1322736685}
   enemy: {fileID: 1523417764}
   pathfinding: {fileID: 1856860872}
+  drawGizmos: 0
   width: 10
   height: 10
   nodeWidth: 1
