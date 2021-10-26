@@ -8,6 +8,7 @@ public class EnemyController : MonoBehaviour {
 
     [SerializeField] float movementSpeed = 3f;
     [SerializeField] float rotationSpeed = 180f;
+    // [SerializeField] float investigationTurnDuration = 2f;
     [SerializeField] Vector2[] globalPath;
     [SerializeField] MovementGrid movementGrid;
 
@@ -42,6 +43,12 @@ public class EnemyController : MonoBehaviour {
         }
     }
 
+    private bool investigating {
+        get {
+            return status == Status.Investigating;
+        }
+    }
+
     private enum Status {
         Normal,
         Alerted,
@@ -60,6 +67,10 @@ public class EnemyController : MonoBehaviour {
             if (currentPathIndex == currentPath.Length - 1) {
                 if (followingGlobalPath) {
                     AdvanceGlobalPath();
+                    SetPathToGlobalWaypoint();
+                }
+                else if (investigating) {
+                    status = Status.Normal;
                     SetPathToGlobalWaypoint();
                 }
             }
@@ -125,7 +136,17 @@ public class EnemyController : MonoBehaviour {
     }
 
     public void TargetDetected(bool _detected, Vector3 _targetLocation) {
-        Status _newStatus = _detected ? Status.Alerted : Status.Normal;
+        Status _newStatus;
+
+        if (_detected) {
+            _newStatus = Status.Alerted;
+        }
+        else if (status == Status.Alerted || status == Status.Investigating) {
+            _newStatus = Status.Investigating;
+        }
+        else {
+            _newStatus = Status.Normal;
+        }
 
         if (_detected) {
             lastTargetLocation = _targetLocation;
