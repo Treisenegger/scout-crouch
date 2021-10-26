@@ -1117,10 +1117,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f05f255d73c9dbe4495d4dfa7ef99705, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  player: {fileID: 1322736685}
+  enemy: {fileID: 1523417764}
+  pathfinding: {fileID: 1856860872}
   width: 10
   height: 10
   nodeWidth: 1
   walkingHeightDetection: 0.1
+  lineOfSightPrecision: 0.3
   obstacleMask:
     serializedVersion: 2
     m_Bits: 256

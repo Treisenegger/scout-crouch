@@ -166,16 +166,16 @@ public class EnemyController : MonoBehaviour {
     }
 
     private void StartInvestigativeTurn() {
-        StartCoroutine(TurnAround(investigationTurnDuration));
+        StartCoroutine(TurnAround(investigationTurnDuration, turnUpdateFreq));
     }
 
-    private IEnumerator TurnAround(float _duration) {
+    private IEnumerator TurnAround(float _duration, float _updateFreq) {
         float _turnSpeed = 360 / _duration;
         float _angleTurned = 0f;
         isMoving = false;
         while (_angleTurned < 360f) {
-            yield return new WaitForSeconds(turnUpdateFreq);
-            float _turnAngle = turnUpdateFreq * _turnSpeed;
+            yield return new WaitForSeconds(_updateFreq);
+            float _turnAngle = _updateFreq * _turnSpeed;
             rb.MoveRotation(rb.rotation * Quaternion.Euler(0f, _turnAngle, 0f));
             _angleTurned += _turnAngle;
         }
