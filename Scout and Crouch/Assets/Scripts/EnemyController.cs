@@ -9,6 +9,7 @@ public class EnemyController : MonoBehaviour {
     [SerializeField] float movementSpeed = 3f;
     [SerializeField] float rotationSpeed = 180f;
     [SerializeField] Vector2[] globalPath;
+    [SerializeField] MovementGrid movementGrid;
 
     Rigidbody rb;
     EnemyVision ev;
@@ -18,19 +19,26 @@ public class EnemyController : MonoBehaviour {
     Vector3 currentDestination;
     bool isMoving = true;
     Status status = Status.Normal;
+    Vector3 lastTargetLocation;
 
     private bool followingGlobalPath {
         get {
             return status == Status.Normal;
         }
     }
-    
+
     private Vector2 pos2D {
         get {
             return new Vector2(transform.position.x, transform.position.z);
         }
         set {
             rb.MovePosition(new Vector3(value.x, transform.position.y, value.y));
+        }
+    }
+
+    private Vector2 currentPathEndPosition {
+        get {
+            return currentPath[currentPath.Length - 1];
         }
     }
 
@@ -62,7 +70,12 @@ public class EnemyController : MonoBehaviour {
         }
 
         Move();
-        RotateWithMovement();
+        if (followingGlobalPath) {
+            RotateWithMovement();
+        }
+        else {
+            RotateTowardsTarget(lastTargetLocation);
+        }
     }
 
     private void AdvanceGlobalPath() {
@@ -108,7 +121,23 @@ public class EnemyController : MonoBehaviour {
     }
 
     private void RotateTowardsTarget(Vector3 _targetPos) {
-        rb.MoveRotation(Quaternion.LookRotation((currentDestination - _targetPos).normalized, Vector3.up));
+        rb.MoveRotation(Quaternion.LookRotation((_targetPos - transform.position).normalized, Vector3.up));
+    }
+
+    public void TargetDetected(bool _detected, Vector3 _targetLocation) {
+        Status _newStatus = _detected ? Status.Alerted : Status.Normal;
+
+        if (_detected) {
+            lastTargetLocation = _targetLocation;
+            Node _prevTargetNode = movementGrid.GetNodeFromWorldPos(currentPathEndPosition);
+            Node _newTargetNode = movementGrid.GetNodeFromWorldPos(_targetLocation);
+
+            if (_newStatus != status || _prevTargetNode != _newTargetNode) {
+                SetNewPath(new Vector2(_targetLocation.x, _targetLocation.z));
+            }
+        }
+
+        status = _newStatus;
     }
 
     private void OnDrawGizmos() {

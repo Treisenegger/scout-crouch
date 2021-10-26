@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-// TODO: Move rotation/movement to an enemy movement controller
+[RequireComponent(typeof(EnemyController))]
 public class EnemyVision : MonoBehaviour {
 
     [Header("Vision Geometry Parameters")]
@@ -29,8 +29,11 @@ public class EnemyVision : MonoBehaviour {
 
     Mesh visionConeMesh;
     bool isAlerted = false;
+    EnemyController ec;
 
     private void Start() {
+        ec = GetComponent<EnemyController>();
+
         visionConeMesh = new Mesh();
         visionConeMesh.name = "Vision Cone Mesh";
         visionConeMeshFilter.mesh = visionConeMesh;
@@ -61,6 +64,7 @@ public class EnemyVision : MonoBehaviour {
         // Determine if a player is in radius
         Collider[] _detectedPlayers = Physics.OverlapSphere(transform.position, visionRange, playerMask);
         if (_detectedPlayers.Length == 0) {
+            ec.TargetDetected(false, Vector3.zero);
             SetAlerted(false);
             return;
         }
@@ -70,6 +74,7 @@ public class EnemyVision : MonoBehaviour {
         Vector3 _directionToPlayer = (_player.transform.position - transform.position).normalized;
         float _angleToPlayer = Mathf.Abs(Vector3.Angle(transform.forward, _directionToPlayer));
         if (_angleToPlayer > visionAngle / 2) {
+            ec.TargetDetected(false, Vector3.zero);
             SetAlerted(false);
             return;
         }
@@ -78,9 +83,11 @@ public class EnemyVision : MonoBehaviour {
         float _distanceToPlayer = Vector3.Distance(transform.position, _player.transform.position);
         bool _occluded = Physics.Raycast(transform.position, _directionToPlayer, _distanceToPlayer, obstacleMask);
         if (_occluded) {
+            ec.TargetDetected(false, Vector3.zero);
             SetAlerted(false);
         }
         else {
+            ec.TargetDetected(true, _player.transform.position);
             SetAlerted(true);
         }
     }
