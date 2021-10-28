@@ -181,7 +181,7 @@ Transform:
   m_GameObject: {fileID: 364708800}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 2.5, y: 0.5, z: 1.5}
-  m_LocalScale: {x: 1.01, y: 1.01, z: 1.01}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 1380419080}
   m_RootOrder: 3
@@ -820,6 +820,7 @@ MonoBehaviour:
   - {x: 3.59, y: 2.46}
   - {x: -1.48, y: -1.46}
   - {x: -3.55, y: -1.44}
+  - {x: -3.55, y: 3.3}
   movementGrid: {fileID: 1856860870}
 --- !u!114 &1523417765
 MonoBehaviour:
@@ -841,7 +842,7 @@ MonoBehaviour:
   obstacleMask:
     serializedVersion: 2
     m_Bits: 256
-  targetDetectionFreq: 0.05
+  targetDetectionFreq: 0.02
   visionResolution: 1
   edgeIdIterations: 6
   maxRaycastDst: 0.5
@@ -849,7 +850,6 @@ MonoBehaviour:
   alertedColor: {r: 1, g: 0, b: 0, a: 0.5}
   visionConeMeshFilter: {fileID: 995998627}
   visionConeBase: {fileID: 290421801}
-  meshMaterial: {fileID: 2100000, guid: d2459d4420203e3428f8b5083f541308, type: 2}
 --- !u!54 &1523417766
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -925,7 +925,7 @@ Transform:
   m_GameObject: {fileID: 1537543715}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -0.5, y: 0.5, z: -0.5}
-  m_LocalScale: {x: 1.01, y: 1.01, z: 1.01}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 1380419080}
   m_RootOrder: 1
@@ -1020,7 +1020,7 @@ Transform:
   m_GameObject: {fileID: 1615292475}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -2.5, y: 0.5, z: -2.49}
-  m_LocalScale: {x: 1.01, y: 1.01, z: 1.01}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 1380419080}
   m_RootOrder: 2

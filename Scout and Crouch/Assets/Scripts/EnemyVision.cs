@@ -25,11 +25,11 @@ public class EnemyVision : MonoBehaviour {
     [SerializeField] Color alertedColor = new Color(1f, 0f, 0f, 0.5f);
     [SerializeField] MeshFilter visionConeMeshFilter;
     [SerializeField] Transform visionConeBase;
-    [SerializeField] Material meshMaterial;
 
     Mesh visionConeMesh;
     bool isAlerted = false;
     EnemyController ec;
+    MeshRenderer meshRenderer;
 
     private void Start() {
         ec = GetComponent<EnemyController>();
@@ -37,6 +37,7 @@ public class EnemyVision : MonoBehaviour {
         visionConeMesh = new Mesh();
         visionConeMesh.name = "Vision Cone Mesh";
         visionConeMeshFilter.mesh = visionConeMesh;
+        meshRenderer = visionConeMeshFilter.GetComponent<MeshRenderer>();
 
         StartCoroutine(InitiatePlayerDetection());
     }
@@ -94,7 +95,7 @@ public class EnemyVision : MonoBehaviour {
 
     private void SetAlerted(bool _isAlerted) {
         isAlerted = _isAlerted;
-        meshMaterial.SetColor("_Color", isAlerted ? alertedColor : defaultColor);
+        meshRenderer.material.SetColor("_Color", isAlerted ? alertedColor : defaultColor);
     }
 
     private void DrawVisionCone() {
