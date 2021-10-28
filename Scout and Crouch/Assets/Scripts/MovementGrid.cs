@@ -5,7 +5,7 @@ using System;
 
 // TODO: - Implement node adjacency just for contiguous nodes
 public class MovementGrid : MonoBehaviour {
-    
+
     // only for testing, have to remove later
     [SerializeField] PlayerMovement player;
     [SerializeField] EnemyController enemy;
@@ -18,13 +18,15 @@ public class MovementGrid : MonoBehaviour {
     [SerializeField] float nodeWidth = 1f;
 
     [Header("Line of Sight Detection Parameters")]
-    [SerializeField] float walkingHeightDetection = 0.1f; // might be better to implement this variable universally
+    [SerializeField] float crouchHeight = 0.1f; // might be better to implement this variable universally
+    [SerializeField] float uprightHeight = 0.7f; // same as above
     [Range(0, 1)]
     [SerializeField] float lineOfSightPrecision = 0.5f;
     [SerializeField] LayerMask obstacleMask;
     
     [HideInInspector] public Node[,] nodes;
-    [HideInInspector] public bool[,,,] edges;
+    [HideInInspector] public bool[,,,] crouchEdges;
+    [HideInInspector] public bool[,,,] uprightEdges;
     [HideInInspector] public int gridWidth, gridHeight;
 
     float realNodeWidth, realNodeHeight;
@@ -53,48 +55,59 @@ public class MovementGrid : MonoBehaviour {
         }
     }
 
-    // Determine node adjacency based on line of sight (might need to replace with simple adjacency)
+    // Determine node adjacency based on line of sight at both crouching and upright heights (might need to replace with simple adjacency)
     private void InitializeEdgeInfo() {
-        edges = new bool[gridWidth, gridHeight, gridWidth, gridHeight];
-        Vector3[] _precisionLOSDisplacement = new Vector3[] {
-            (Vector3.forward + Vector3.right).normalized * lineOfSightPrecision,
-            (-Vector3.forward + Vector3.right).normalized * lineOfSightPrecision,
-            -(Vector3.forward + Vector3.right).normalized * lineOfSightPrecision,
-            -(-Vector3.forward + Vector3.right).normalized * lineOfSightPrecision
-        };
+        crouchEdges = new bool[gridWidth, gridHeight, gridWidth, gridHeight];
+        uprightEdges = new bool[gridWidth, gridHeight, gridWidth, gridHeight];
 
         foreach (Node _node1 in nodes) {
             foreach (Node _node2 in nodes) {
-                if (_node2.gridPos.x >= _node1.gridPos.x && _node2.gridPos.y >= _node1.gridPos.y) {
+                if (_node2.gridPos.x < _node1.gridPos.x || (_node2.gridPos.x == _node1.gridPos.x && _node2.gridPos.y <= _node1.gridPos.y)) {
                     continue;
                 }
 
-                Vector3 _originPos = _node1.worldPos + Vector3.up * walkingHeightDetection;
-                Vector3 _targetDir = (_node2.worldPos - _node1.worldPos).normalized;
-                float _nodeDist = Vector3.Distance(_node1.worldPos, _node2.worldPos);
-                bool _visible = true;
+                bool _crouchVisible = CheckVisibility(_node1, _node2, crouchHeight, lineOfSightPrecision);
 
-                foreach (Vector3 _displacementVector in _precisionLOSDisplacement) {
-                    _visible = !Physics.Raycast(_originPos + _displacementVector, _targetDir, _nodeDist, obstacleMask);
-                    if (!_visible) {
-                        break;
-                    }
-                    _visible = !Physics.Raycast(_originPos + _displacementVector + _targetDir * _nodeDist, -_targetDir, _nodeDist, obstacleMask);
-                    if (!_visible) {
-                        break;
-                    }
-                }
-
-                if (_visible) {
-                    edges[_node1.gridPos.x, _node1.gridPos.y, _node2.gridPos.x, _node2.gridPos.y] = true;
-                    edges[_node2.gridPos.x, _node2.gridPos.y, _node1.gridPos.x, _node1.gridPos.y] = true;
+                if (_crouchVisible) {
+                    crouchEdges[_node1.gridPos.x, _node1.gridPos.y, _node2.gridPos.x, _node2.gridPos.y] = true;
+                    crouchEdges[_node2.gridPos.x, _node2.gridPos.y, _node1.gridPos.x, _node1.gridPos.y] = true;
+                    uprightEdges[_node1.gridPos.x, _node1.gridPos.y, _node2.gridPos.x, _node2.gridPos.y] = true;
+                    uprightEdges[_node2.gridPos.x, _node2.gridPos.y, _node1.gridPos.x, _node1.gridPos.y] = true;
                 }
                 else {
-                    edges[_node1.gridPos.x, _node1.gridPos.y, _node2.gridPos.x, _node2.gridPos.y] = false;
-                    edges[_node2.gridPos.x, _node2.gridPos.y, _node1.gridPos.x, _node1.gridPos.y] = false;
+                    crouchEdges[_node1.gridPos.x, _node1.gridPos.y, _node2.gridPos.x, _node2.gridPos.y] = false;
+                    crouchEdges[_node2.gridPos.x, _node2.gridPos.y, _node1.gridPos.x, _node1.gridPos.y] = false;
+                    bool _uprightVisible = CheckVisibility(_node1, _node2, uprightHeight, lineOfSightPrecision);
+
+                    if (_uprightVisible) {
+                        uprightEdges[_node1.gridPos.x, _node1.gridPos.y, _node2.gridPos.x, _node2.gridPos.y] = true;
+                        uprightEdges[_node2.gridPos.x, _node2.gridPos.y, _node1.gridPos.x, _node1.gridPos.y] = true;
+                    }
+                    else {
+                        uprightEdges[_node1.gridPos.x, _node1.gridPos.y, _node2.gridPos.x, _node2.gridPos.y] = false;
+                        uprightEdges[_node2.gridPos.x, _node2.gridPos.y, _node1.gridPos.x, _node1.gridPos.y] = false;
+                    }
                 }
             }
         }
+    }
+
+    // Returns true if visibility from node 1 to node 2 (or viceversa) is not obstructed by an obstacle at specified height
+    private bool CheckVisibility(Node _node1, Node _node2, float _visibilityHeight, float _losPrecision) {
+        Vector3 _originPos = _node1.worldPos + Vector3.up * _visibilityHeight;
+        Vector3 _targetDir = (_node2.worldPos - _node1.worldPos).normalized;
+        float _nodeDist = Vector3.Distance(_node1.worldPos, _node2.worldPos);
+
+        foreach (Vector3 _displacementVector in new Vector3[] { Vector3.forward, Vector3.right, Vector3.back, Vector3.left }) {
+            if (Physics.Raycast(_originPos + _displacementVector * _losPrecision, _targetDir, _nodeDist, obstacleMask)) {
+                return false;
+            }
+            if (Physics.Raycast(_originPos + _displacementVector * _losPrecision + _targetDir * _nodeDist, -_targetDir, _nodeDist, obstacleMask)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     // Returns node reference from world position
@@ -118,8 +131,8 @@ public class MovementGrid : MonoBehaviour {
             Node _enemyNode = GetNodeFromWorldPos(enemy.transform.position);
             // Vector2Int[] _path = pathfinding.FindPath(player.transform.position, enemy.transform.position, 0f);
             foreach (Node _node in nodes) {
-                // Gizmos.color = edges[_playerNode.gridPos.x, _playerNode.gridPos.y, _node.gridPos.x, _node.gridPos.y] ? Color.red : Color.white;
-                Gizmos.color = edges[_enemyNode.gridPos.x, _enemyNode.gridPos.y, _node.gridPos.x, _node.gridPos.y] ? Color.red : Color.white;
+                // Gizmos.color = crouchEdges[_playerNode.gridPos.x, _playerNode.gridPos.y, _node.gridPos.x, _node.gridPos.y] ? Color.red : Color.white;
+                Gizmos.color = uprightEdges[_enemyNode.gridPos.x, _enemyNode.gridPos.y, _node.gridPos.x, _node.gridPos.y] ? Color.red : Color.white;
                 // Gizmos.color = Array.IndexOf(_path, _node.gridPos) > -1 ? Color.red : Color.white;
                 // Gizmos.DrawCube(_node.worldPos, new Vector3(realNodeWidth, 1f, realNodeHeight) * 0.9f);
                 Gizmos.DrawSphere(_node.worldPos, lineOfSightPrecision);

@@ -816,12 +816,12 @@ MonoBehaviour:
   rotationSpeed: 180
   investigationTurnDuration: 1.5
   turnUpdateFreq: 0.03
+  movementGrid: {fileID: 1856860870}
   globalPath:
   - {x: 3.59, y: 2.46}
   - {x: -1.48, y: -1.46}
   - {x: -3.55, y: -1.44}
   - {x: -3.55, y: 3.3}
-  movementGrid: {fileID: 1856860870}
 --- !u!114 &1523417765
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1019,8 +1019,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1615292475}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -2.5, y: 0.5, z: -2.49}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalPosition: {x: -2.5, y: 0.25, z: -2.49}
+  m_LocalScale: {x: 1, y: 0.5, z: 1}
   m_Children: []
   m_Father: {fileID: 1380419080}
   m_RootOrder: 2
@@ -1120,11 +1120,12 @@ MonoBehaviour:
   player: {fileID: 1322736685}
   enemy: {fileID: 1523417764}
   pathfinding: {fileID: 1856860872}
-  drawGizmos: 0
+  drawGizmos: 1
   width: 10
   height: 10
   nodeWidth: 1
-  walkingHeightDetection: 0.1
+  crouchHeight: 0.1
+  uprightHeight: 0.7
   lineOfSightPrecision: 0.3
   obstacleMask:
     serializedVersion: 2

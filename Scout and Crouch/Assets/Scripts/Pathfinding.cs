@@ -39,7 +39,7 @@ public class Pathfinding : MonoBehaviour {
             _closedSet.Add(_currentNode);
 
             foreach (Node _neighbour in movementGrid.nodes) {
-                if (!movementGrid.edges[_currentNode.gridPos.x, _currentNode.gridPos.y, _neighbour.gridPos.x, _neighbour.gridPos.y]) {
+                if (!movementGrid.crouchEdges[_currentNode.gridPos.x, _currentNode.gridPos.y, _neighbour.gridPos.x, _neighbour.gridPos.y]) {
                     continue;
                 }
                 if (_closedSet.Contains(_neighbour)) {
