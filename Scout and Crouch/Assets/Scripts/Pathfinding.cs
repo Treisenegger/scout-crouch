@@ -100,13 +100,11 @@ public class Pathfinding : MonoBehaviour {
         return _pathArray;
     }
 
-    private List<Node> GetNeighbours(Node _node, bool _onlyContiguous) {
+    private IEnumerable<Node> GetNeighbours(Node _node, bool _onlyContiguous) {
         return _onlyContiguous ? GetContiguousNeighbours(_node) : GetReachableNeighbours(_node);
     }
 
-    private List<Node> GetContiguousNeighbours(Node _node) {
-        List<Node> _neighbours = new List<Node>();
-
+    private IEnumerable<Node> GetContiguousNeighbours(Node _node) {
         for (int i = -1; i <= 1; i++) {
             for (int j = -1; j <= 1; j++) {
                 if (i == 0 && j == 0) {
@@ -122,23 +120,17 @@ public class Pathfinding : MonoBehaviour {
                 Node _otherNode = movementGrid.nodes[_otherGridPos.x, _otherGridPos.y];
 
                 if (movementGrid.crouchEdges[_node.gridPos.x, _node.gridPos.y, _otherNode.gridPos.x, _otherNode.gridPos.y]) {
-                    _neighbours.Add(_otherNode);
+                    yield return _otherNode;
                 }
             }
         }
-
-        return _neighbours;
     }
 
-    private List<Node> GetReachableNeighbours(Node _node) {
-        List<Node> _neighbours = new List<Node>();
-
+    private IEnumerable<Node> GetReachableNeighbours(Node _node) {
         foreach (Node _otherNode in movementGrid.nodes) {
             if (movementGrid.crouchEdges[_node.gridPos.x, _node.gridPos.y, _otherNode.gridPos.x, _otherNode.gridPos.y]) {
-                _neighbours.Add(_otherNode);
+                yield return _otherNode;
             }
         }
-
-        return _neighbours;
     }
 }
