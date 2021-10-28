@@ -18,7 +18,7 @@ public class Pathfinding : MonoBehaviour {
     }
 
     // Find shortest path between two nodes based on the adjacency matrix
-    public Vector2[] FindPath(Vector3 _startPos, Vector3 _endPos, float _maxDist) {
+    public Vector2[] FindPath(Vector3 _startPos, Vector3 _endPos, float _maxPathLength = -1f, float _maxDistToTarget = -1f, bool _preserveVisibility = false, bool _onlyContiguous = false) {
         Heap<Node> _openSet = new Heap<Node>(movementGrid.gridWidth * movementGrid.gridHeight);
         HashSet<Node> _closedSet = new HashSet<Node>();
         Node _startNode = movementGrid.GetNodeFromWorldPos(_startPos);
@@ -29,16 +29,25 @@ public class Pathfinding : MonoBehaviour {
         while (_openSet.Count > 0) {
             Node _currentNode = _openSet.Pop();
 
+            if (_maxPathLength > 0 && _currentNode.gCost > _maxPathLength) {
+                continue;
+            }
+
+            if (_maxDistToTarget > 0 && _currentNode.hCost > _maxDistToTarget) {
+                continue;
+            }
+
+            if (_preserveVisibility && !movementGrid.uprightEdges[_currentNode.gridPos.x, _currentNode.gridPos.y, _endNode.gridPos.x, _endNode.gridPos.y]) {
+                continue;
+            }
+
             if (_currentNode == _endNode) {
                 return ReconstructPath(_startNode, _endNode, _endPos);
             }
 
             _closedSet.Add(_currentNode);
 
-            foreach (Node _neighbour in movementGrid.nodes) {
-                if (!movementGrid.crouchEdges[_currentNode.gridPos.x, _currentNode.gridPos.y, _neighbour.gridPos.x, _neighbour.gridPos.y]) {
-                    continue;
-                }
+            foreach (Node _neighbour in GetNeighbours(_currentNode, _onlyContiguous)) {
                 if (_closedSet.Contains(_neighbour)) {
                     continue;
                 }
@@ -77,5 +86,47 @@ public class Pathfinding : MonoBehaviour {
         Array.Reverse(_pathArray);
 
         return _pathArray;
+    }
+
+    private List<Node> GetNeighbours(Node _node, bool _onlyContiguous) {
+        return _onlyContiguous ? GetContiguousNeighbours(_node) : GetReachableNeighbours(_node);
+    }
+
+    private List<Node> GetContiguousNeighbours(Node _node) {
+        List<Node> _neighbours = new List<Node>();
+
+        for (int i = -1; i <= 1; i++) {
+            for (int j = -1; j <= 1; j++) {
+                if (i == 0 && j == 0) {
+                    continue;
+                }
+
+                Vector2Int _otherGridPos = _node.gridPos + i * Vector2Int.right + j * Vector2Int.up;
+
+                if (_otherGridPos.x < 0 || _otherGridPos.x >= movementGrid.gridWidth || _otherGridPos.y < 0 || _otherGridPos.y >= movementGrid.gridHeight) {
+                    continue;
+                }
+
+                Node _otherNode = movementGrid.nodes[_otherGridPos.x, _otherGridPos.y];
+
+                if (movementGrid.crouchEdges[_node.gridPos.x, _node.gridPos.y, _otherNode.gridPos.x, _otherNode.gridPos.y]) {
+                    _neighbours.Add(_otherNode);
+                }
+            }
+        }
+
+        return _neighbours;
+    }
+
+    private List<Node> GetReachableNeighbours(Node _node) {
+        List<Node> _neighbours = new List<Node>();
+
+        foreach (Node _otherNode in movementGrid.nodes) {
+            if (movementGrid.crouchEdges[_node.gridPos.x, _node.gridPos.y, _otherNode.gridPos.x, _otherNode.gridPos.y]) {
+                _neighbours.Add(_otherNode);
+            }
+        }
+
+        return _neighbours;
     }
 }

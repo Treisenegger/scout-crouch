@@ -36,15 +36,6 @@ public class EnemyController : MonoBehaviour {
         }
     }
 
-    // private Vector2 pos2D {
-    //     get {
-    //         return new Vector2(transform.position.x, transform.position.z);
-    //     }
-    //     set {
-    //         rb.MovePosition(new Vector3(value.x, transform.position.y, value.y));
-    //     }
-    // }
-
     private Vector2 currentPathEndPosition {
         get {
             return currentPath[currentPath.Length - 1];
@@ -115,7 +106,7 @@ public class EnemyController : MonoBehaviour {
 
     // Set new local path
     private void SetNewPath(Vector2 _target) {
-        currentPath = Pathfinding.instance.FindPath(transform.position, Math2D.V2ToV3AtZero(_target), 0f);
+        currentPath = Pathfinding.instance.FindPath(transform.position, Math2D.V2ToV3AtZero(_target));
         currentPathIndex = 0;
         UpdateDestination();
     }
