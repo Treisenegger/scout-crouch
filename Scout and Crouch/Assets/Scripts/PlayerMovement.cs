@@ -4,6 +4,8 @@ using UnityEngine;
 
 [RequireComponent(typeof(Rigidbody))]
 public class PlayerMovement : MonoBehaviour {
+
+    [Header("Movement parameters")]
     [SerializeField] float movementSpeed = 1f;
 
     Vector3 movDir = Vector3.zero;

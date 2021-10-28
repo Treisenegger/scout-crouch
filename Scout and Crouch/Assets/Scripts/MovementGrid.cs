@@ -3,16 +3,21 @@ using System.Collections.Generic;
 using UnityEngine;
 using System;
 
+// TODO: - Implement node adjacency just for contiguous nodes
 public class MovementGrid : MonoBehaviour {
-    // // only for testing, have to remove later
+    
+    // only for testing, have to remove later
     [SerializeField] PlayerMovement player;
     [SerializeField] EnemyController enemy;
     [SerializeField] Pathfinding pathfinding;
     [SerializeField] bool drawGizmos = false;
 
+    [Header("Grid Geometry Parameters")]
     [SerializeField] float width = 1f;
     [SerializeField] float height = 1f;
     [SerializeField] float nodeWidth = 1f;
+
+    [Header("Line of Sight Detection Parameters")]
     [SerializeField] float walkingHeightDetection = 0.1f; // might be better to implement this variable universally
     [Range(0, 1)]
     [SerializeField] float lineOfSightPrecision = 0.5f;
@@ -48,7 +53,7 @@ public class MovementGrid : MonoBehaviour {
         }
     }
 
-    // Determine node adjacency based on line of sight
+    // Determine node adjacency based on line of sight (might need to replace with simple adjacency)
     private void InitializeEdgeInfo() {
         edges = new bool[gridWidth, gridHeight, gridWidth, gridHeight];
         Vector3[] _precisionLOSDisplacement = new Vector3[] {

@@ -2,16 +2,23 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+// TODO: - Implement rotation snap to last player position on investigating status
+
 [RequireComponent(typeof(Rigidbody))]
 [RequireComponent(typeof(EnemyVision))]
 public class EnemyController : MonoBehaviour {
 
+    [Header("Movement Parameters")]
     [SerializeField] float movementSpeed = 3f;
     [SerializeField] float rotationSpeed = 180f;
     [SerializeField] float investigationTurnDuration = 2f;
     [SerializeField] float turnUpdateFreq = 0.05f;
-    [SerializeField] Vector2[] globalPath;
+
+    [Header("Pathfinding Parameters")]
     [SerializeField] MovementGrid movementGrid;
+
+    [Header("Path Parameters")]
+    [SerializeField] Vector2[] globalPath;
 
     Rigidbody rb;
     EnemyVision ev;
@@ -91,28 +98,34 @@ public class EnemyController : MonoBehaviour {
         }
     }
 
+    // Increment index of the global path
     private void AdvanceGlobalPath() {
         globalPathIndex = (globalPathIndex + 1) % globalPath.Length;
     }
 
+    // Increment index of the current local path
     private void AdvanceCurrentPath() {
         currentPathIndex++;
     }
 
+    // Set new local path towards next waypoint in global path
     private void SetPathToGlobalWaypoint() {
         SetNewPath(globalPath[globalPathIndex]);
     }
 
+    // Set new local path
     private void SetNewPath(Vector2 _target) {
         currentPath = Pathfinding.instance.FindPath(transform.position, new Vector3(_target.x, 0f, _target.y), 0f);
         currentPathIndex = 0;
         UpdateDestination();
     }
     
+    // Set new destination when setting new path or arriving at current destination
     private void UpdateDestination() {
         currentDestination = new Vector3(currentPath[currentPathIndex].x, transform.position.y, currentPath[currentPathIndex].y);
     }
 
+    // Move the enemy towards its next destination in the local path
     private void Move() {
         if (!isMoving) {
             return;
@@ -124,6 +137,7 @@ public class EnemyController : MonoBehaviour {
         rb.MovePosition(Vector3.MoveTowards(_from, _to, _maxDist));
     }
 
+    // Gradually rotate the enemy towards its moving direction on normal status
     private void RotateWithMovement() {
         if (!isMoving || currentDestination == rb.position) {
             return;
@@ -135,10 +149,12 @@ public class EnemyController : MonoBehaviour {
         rb.MoveRotation(Quaternion.RotateTowards(_from, _to, _maxAngle));
     }
 
+    // Set rotation to look at the player's last location
     private void RotateTowardsTarget(Vector3 _targetPos) {
         rb.MoveRotation(Quaternion.LookRotation((_targetPos - transform.position).normalized, Vector3.up));
     }
 
+    // Method called when target is detected by EnemyVision component to set the status field and the last player position
     public void TargetDetected(bool _detected, Vector3 _targetLocation) {
         Status _newStatus;
 
@@ -169,6 +185,7 @@ public class EnemyController : MonoBehaviour {
         StartCoroutine(TurnAround(investigationTurnDuration, turnUpdateFreq));
     }
 
+    // Complete a 360 turn when arriving at the player's last position when investigating
     private IEnumerator TurnAround(float _duration, float _updateFreq) {
         float _turnSpeed = 360 / _duration;
         float _angleTurned = 0f;
@@ -182,6 +199,7 @@ public class EnemyController : MonoBehaviour {
         isMoving = true;
     }
 
+    // Draw global path's waypoints for easier path definition
     private void OnDrawGizmos() {
         foreach (Vector2 _point in globalPath) {
             Vector3 _sphereCenter = new Vector3(_point.x, 0f, _point.y);

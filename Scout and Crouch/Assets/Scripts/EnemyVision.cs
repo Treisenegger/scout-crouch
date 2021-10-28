@@ -2,6 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+// TODO: - Implement target detection at two heights to account for lower obstacles
+
 [RequireComponent(typeof(EnemyController))]
 public class EnemyVision : MonoBehaviour {
 

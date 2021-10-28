@@ -3,17 +3,21 @@ using System.Collections.Generic;
 using System;
 using UnityEngine;
 
+// TODO: - Implement pathfinding with several restrictions: with max path length, that preserves max distance from target
+//          and that preserves line of sight towards target 
 [RequireComponent(typeof(MovementGrid))]
 public class Pathfinding : MonoBehaviour {
+
     public static Pathfinding instance;
     MovementGrid movementGrid;
 
+    // Implement simple singleton
     private void Awake() {
         instance = this;
         movementGrid = GetComponent<MovementGrid>();
     }
 
-    // TODO: implement max distance search
+    // Find shortest path between two nodes based on the adjacency matrix
     public Vector2[] FindPath(Vector3 _startPos, Vector3 _endPos, float _maxDist) {
         Heap<Node> _openSet = new Heap<Node>(movementGrid.gridWidth * movementGrid.gridHeight);
         HashSet<Node> _closedSet = new HashSet<Node>();
@@ -61,6 +65,7 @@ public class Pathfinding : MonoBehaviour {
         return new Vector2[0];
     }
 
+    // Create a 2D position array based on the found path
     private Vector2[] ReconstructPath(Node _startNode, Node _endNode, Vector3 _endPos) {
         List<Vector2> _pathList = new List<Vector2>();
         _pathList.Add(new Vector2(_endPos.x, _endPos.z));
