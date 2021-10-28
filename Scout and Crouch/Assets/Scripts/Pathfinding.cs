@@ -46,11 +46,11 @@ public class Pathfinding : MonoBehaviour {
                     continue;
                 }
                 bool _inOpenSet = _openSet.Contains(_neighbour);
-                float _newGCost = _currentNode.gCost + Vector3.Distance(_currentNode.worldPos, _neighbour.worldPos);
+                float _newGCost = _currentNode.gCost + Math2D.V3ToV3Dist(_currentNode.worldPos, _neighbour.worldPos);
                 if (!_inOpenSet || _newGCost < _neighbour.gCost) {
                     _neighbour.parent = _currentNode;
                     _neighbour.gCost = _newGCost;
-                    _neighbour.hCost = Vector3.Distance(_neighbour.worldPos, _endNode.worldPos);
+                    _neighbour.hCost = Math2D.V3ToV3Dist(_neighbour.worldPos, _endNode.worldPos);
 
                     if (!_inOpenSet) {
                         _openSet.Add(_neighbour);
@@ -68,12 +68,12 @@ public class Pathfinding : MonoBehaviour {
     // Create a 2D position array based on the found path
     private Vector2[] ReconstructPath(Node _startNode, Node _endNode, Vector3 _endPos) {
         List<Vector2> _pathList = new List<Vector2>();
-        _pathList.Add(new Vector2(_endPos.x, _endPos.z));
+        _pathList.Add(Math2D.V3ToV2(_endPos));
         Node _currentNode = _endNode;
 
         while (_currentNode != null) {
             if (_currentNode != _startNode && _currentNode != _endNode) {
-                _pathList.Add(new Vector2(_currentNode.worldPos.x, _currentNode.worldPos.z));
+                _pathList.Add(Math2D.V3ToV2(_currentNode.worldPos));
             }
             _currentNode = _currentNode.parent;
         }

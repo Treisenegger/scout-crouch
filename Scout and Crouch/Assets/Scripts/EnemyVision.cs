@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-// TODO: - Implement target detection at two heights to account for lower obstacles
+// TODO: - Implement target detection at two heights to account for lower obstacles (viewcast twice and draw 2 cones)
 
 [RequireComponent(typeof(EnemyController))]
 public class EnemyVision : MonoBehaviour {
@@ -76,7 +76,7 @@ public class EnemyVision : MonoBehaviour {
 
         // Determine if player is in cone
         GameObject _player = _detectedPlayers[0].gameObject;
-        Vector3 _directionToPlayer = (_player.transform.position - transform.position).normalized;
+        Vector3 _directionToPlayer = Math2D.V3ToV3Dir(transform.position, _player.transform.position);
         float _angleToPlayer = Mathf.Abs(Vector3.Angle(transform.forward, _directionToPlayer));
         if (_angleToPlayer > visionAngle / 2) {
             ec.TargetDetected(false, Vector3.zero);
@@ -85,7 +85,7 @@ public class EnemyVision : MonoBehaviour {
         }
 
         // Determine if player is occluded
-        float _distanceToPlayer = Vector3.Distance(transform.position, _player.transform.position);
+        float _distanceToPlayer = Math2D.V3ToV3Dist(transform.position, _player.transform.position);
         bool _occluded = Physics.Raycast(transform.position, _directionToPlayer, _distanceToPlayer, obstacleMask);
         if (_occluded) {
             ec.TargetDetected(false, Vector3.zero);

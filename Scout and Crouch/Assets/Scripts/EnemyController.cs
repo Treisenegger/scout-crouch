@@ -36,14 +36,14 @@ public class EnemyController : MonoBehaviour {
         }
     }
 
-    private Vector2 pos2D {
-        get {
-            return new Vector2(transform.position.x, transform.position.z);
-        }
-        set {
-            rb.MovePosition(new Vector3(value.x, transform.position.y, value.y));
-        }
-    }
+    // private Vector2 pos2D {
+    //     get {
+    //         return new Vector2(transform.position.x, transform.position.z);
+    //     }
+    //     set {
+    //         rb.MovePosition(new Vector3(value.x, transform.position.y, value.y));
+    //     }
+    // }
 
     private Vector2 currentPathEndPosition {
         get {
@@ -115,14 +115,14 @@ public class EnemyController : MonoBehaviour {
 
     // Set new local path
     private void SetNewPath(Vector2 _target) {
-        currentPath = Pathfinding.instance.FindPath(transform.position, new Vector3(_target.x, 0f, _target.y), 0f);
+        currentPath = Pathfinding.instance.FindPath(transform.position, Math2D.V2ToV3AtZero(_target), 0f);
         currentPathIndex = 0;
         UpdateDestination();
     }
     
     // Set new destination when setting new path or arriving at current destination
     private void UpdateDestination() {
-        currentDestination = new Vector3(currentPath[currentPathIndex].x, transform.position.y, currentPath[currentPathIndex].y);
+        currentDestination = Math2D.V2ToV3AtHeight(currentPath[currentPathIndex], transform.position.y);
     }
 
     // Move the enemy towards its next destination in the local path
@@ -151,7 +151,7 @@ public class EnemyController : MonoBehaviour {
 
     // Set rotation to look at the player's last location
     private void RotateTowardsTarget(Vector3 _targetPos) {
-        rb.MoveRotation(Quaternion.LookRotation((_targetPos - transform.position).normalized, Vector3.up));
+        rb.MoveRotation(Quaternion.LookRotation(Math2D.V3ToV3Dir(transform.position, _targetPos), Vector3.up));
     }
 
     // Method called when target is detected by EnemyVision component to set the status field and the last player position
@@ -174,7 +174,7 @@ public class EnemyController : MonoBehaviour {
             Node _newTargetNode = movementGrid.GetNodeFromWorldPos(_targetLocation);
 
             if (_newStatus != status || _prevTargetNode != _newTargetNode) {
-                SetNewPath(new Vector2(_targetLocation.x, _targetLocation.z));
+                SetNewPath(Math2D.V3ToV2(_targetLocation));
             }
         }
 
@@ -202,7 +202,7 @@ public class EnemyController : MonoBehaviour {
     // Draw global path's waypoints for easier path definition
     private void OnDrawGizmos() {
         foreach (Vector2 _point in globalPath) {
-            Vector3 _sphereCenter = new Vector3(_point.x, 0f, _point.y);
+            Vector3 _sphereCenter = Math2D.V2ToV3AtZero(_point);
             Gizmos.color = Color.cyan;
             Gizmos.DrawSphere(_sphereCenter, 0.1f);
         }

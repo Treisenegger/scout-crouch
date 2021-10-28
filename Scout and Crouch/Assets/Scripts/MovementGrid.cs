@@ -94,9 +94,9 @@ public class MovementGrid : MonoBehaviour {
 
     // Returns true if visibility from node 1 to node 2 (or viceversa) is not obstructed by an obstacle at specified height
     private bool CheckVisibility(Node _node1, Node _node2, float _visibilityHeight, float _losPrecision) {
-        Vector3 _originPos = _node1.worldPos + Vector3.up * _visibilityHeight;
-        Vector3 _targetDir = (_node2.worldPos - _node1.worldPos).normalized;
-        float _nodeDist = Vector3.Distance(_node1.worldPos, _node2.worldPos);
+        Vector3 _originPos = Math2D.V3AtHeight(_node1.worldPos, _visibilityHeight);
+        Vector3 _targetDir = Math2D.V3ToV3Dir(_node1.worldPos, _node2.worldPos);
+        float _nodeDist = Math2D.V3ToV3Dist(_node1.worldPos, _node2.worldPos);
 
         foreach (Vector3 _displacementVector in new Vector3[] { Vector3.forward, Vector3.right, Vector3.back, Vector3.left }) {
             if (Physics.Raycast(_originPos + _displacementVector * _losPrecision, _targetDir, _nodeDist, obstacleMask)) {
