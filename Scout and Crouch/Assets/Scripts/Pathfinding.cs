@@ -24,10 +24,7 @@ public class Pathfinding : MonoBehaviour {
         Node _startNode = movementGrid.GetNodeFromWorldPos(_startPos);
         Node _endNode = movementGrid.GetNodeFromWorldPos(_endPos);
         _openSet.Add(_startNode);
-
-        _startNode.parent = null;
-        _startNode.gCost = 0f;
-        _startNode.hCost = Vector3.Distance(_startNode.worldPos, _endNode.worldPos);
+        _startNode.UpdateParameters(null, 0f, Vector3.Distance(_startNode.worldPos, _endNode.worldPos));
 
         while (_openSet.Count > 0) {
             Node _currentNode = _openSet.Pop();
@@ -48,9 +45,7 @@ public class Pathfinding : MonoBehaviour {
                 bool _inOpenSet = _openSet.Contains(_neighbour);
                 float _newGCost = _currentNode.gCost + Math2D.V3ToV3Dist(_currentNode.worldPos, _neighbour.worldPos);
                 if (!_inOpenSet || _newGCost < _neighbour.gCost) {
-                    _neighbour.parent = _currentNode;
-                    _neighbour.gCost = _newGCost;
-                    _neighbour.hCost = Math2D.V3ToV3Dist(_neighbour.worldPos, _endNode.worldPos);
+                    _neighbour.UpdateParameters(_currentNode, _newGCost, Math2D.V3ToV3Dist(_neighbour.worldPos, _endNode.worldPos));
 
                     if (!_inOpenSet) {
                         _openSet.Add(_neighbour);

@@ -30,4 +30,10 @@ public class Node : IHeapItem<Node> {
         }
         return -_compare;
     }
+
+    public void UpdateParameters(Node _parent, float _gCost, float _hCost) {
+        parent = _parent;
+        gCost = _gCost;
+        hCost = _hCost;
+    }
 }
