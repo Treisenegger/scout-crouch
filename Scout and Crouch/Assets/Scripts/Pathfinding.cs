@@ -42,7 +42,7 @@ public class Pathfinding : MonoBehaviour {
             }
 
             if (_currentNode == _endNode) {
-                return ReconstructPath(_startNode, _endNode, _endPos);
+                return ReconstructPath(_startNode, _endNode, _endPos, _onlyContiguous);
             }
 
             _closedSet.Add(_currentNode);
@@ -70,14 +70,26 @@ public class Pathfinding : MonoBehaviour {
     }
 
     // Create a 2D position array based on the found path
-    private Vector2[] ReconstructPath(Node _startNode, Node _endNode, Vector3 _endPos) {
+    private Vector2[] ReconstructPath(Node _startNode, Node _endNode, Vector3 _endPos, bool _simplify = false) {
         List<Vector2> _pathList = new List<Vector2>();
         _pathList.Add(Math2D.V3ToV2(_endPos));
         Node _currentNode = _endNode;
+        Node _lastNode = null;
 
         while (_currentNode != null) {
             if (_currentNode != _startNode && _currentNode != _endNode) {
-                _pathList.Add(Math2D.V3ToV2(_currentNode.worldPos));
+                if (_simplify) {
+                    if (movementGrid.crouchEdges[_lastNode.gridPos.x, _lastNode.gridPos.y, _currentNode.parent.gridPos.x, _currentNode.parent.gridPos.y]) {
+                        _lastNode.parent = _currentNode.parent;
+                    }
+                    else {
+                        _pathList.Add(Math2D.V3ToV2(_currentNode.worldPos));
+                        _lastNode = _currentNode;
+                    }
+                }
+                else {
+                    _pathList.Add(Math2D.V3ToV2(_currentNode.worldPos));
+                }
             }
             _currentNode = _currentNode.parent;
         }
