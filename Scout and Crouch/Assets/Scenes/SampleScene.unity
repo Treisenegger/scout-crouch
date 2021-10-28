@@ -843,6 +843,8 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 256
   targetDetectionFreq: 0.02
+  crouchHeight: {fileID: 11400000, guid: 9c561fa395f6de9479d6c4546c2ede98, type: 2}
+  uprightHeight: {fileID: 11400000, guid: 26b9042aca20f6c4e9dfc673d030945e, type: 2}
   visionResolution: 1
   edgeIdIterations: 6
   maxRaycastDst: 0.5
@@ -1019,8 +1021,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1615292475}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -2.5, y: 0.25, z: -2.49}
-  m_LocalScale: {x: 1, y: 0.5, z: 1}
+  m_LocalPosition: {x: -2.5, y: 0.5, z: -2.49}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 1380419080}
   m_RootOrder: 2
@@ -1124,8 +1126,8 @@ MonoBehaviour:
   width: 10
   height: 10
   nodeWidth: 1
-  crouchHeight: 0.1
-  uprightHeight: 0.7
+  crouchHeight: {fileID: 11400000, guid: 9c561fa395f6de9479d6c4546c2ede98, type: 2}
+  uprightHeight: {fileID: 11400000, guid: 26b9042aca20f6c4e9dfc673d030945e, type: 2}
   lineOfSightPrecision: 0.3
   obstacleMask:
     serializedVersion: 2

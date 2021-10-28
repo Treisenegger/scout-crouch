@@ -18,8 +18,8 @@ public class MovementGrid : MonoBehaviour {
     [SerializeField] float nodeWidth = 1f;
 
     [Header("Line of Sight Detection Parameters")]
-    [SerializeField] float crouchHeight = 0.1f; // might be better to implement this variable universally
-    [SerializeField] float uprightHeight = 0.7f; // same as above
+    [SerializeField] FloatVariable crouchHeight; // might be better to implement this variable universally
+    [SerializeField] FloatVariable uprightHeight; // same as above
     [Range(0, 1)]
     [SerializeField] float lineOfSightPrecision = 0.5f;
     [SerializeField] LayerMask obstacleMask;
@@ -66,7 +66,7 @@ public class MovementGrid : MonoBehaviour {
                     continue;
                 }
 
-                bool _crouchVisible = CheckVisibility(_node1, _node2, crouchHeight, lineOfSightPrecision);
+                bool _crouchVisible = CheckVisibility(_node1, _node2, crouchHeight.Value, lineOfSightPrecision);
 
                 if (_crouchVisible) {
                     crouchEdges[_node1.gridPos.x, _node1.gridPos.y, _node2.gridPos.x, _node2.gridPos.y] = true;
@@ -77,7 +77,7 @@ public class MovementGrid : MonoBehaviour {
                 else {
                     crouchEdges[_node1.gridPos.x, _node1.gridPos.y, _node2.gridPos.x, _node2.gridPos.y] = false;
                     crouchEdges[_node2.gridPos.x, _node2.gridPos.y, _node1.gridPos.x, _node1.gridPos.y] = false;
-                    bool _uprightVisible = CheckVisibility(_node1, _node2, uprightHeight, lineOfSightPrecision);
+                    bool _uprightVisible = CheckVisibility(_node1, _node2, uprightHeight.Value, lineOfSightPrecision);
 
                     if (_uprightVisible) {
                         uprightEdges[_node1.gridPos.x, _node1.gridPos.y, _node2.gridPos.x, _node2.gridPos.y] = true;

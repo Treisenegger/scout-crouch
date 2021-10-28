@@ -18,6 +18,8 @@ public class EnemyVision : MonoBehaviour {
 
     [Header("Vision Cone Detection Parameters")]
     [SerializeField] float targetDetectionFreq = 0.2f;
+    [SerializeField] FloatVariable crouchHeight;
+    [SerializeField] FloatVariable uprightHeight;
 
     [Header("Vision Cone Rendering Parameters")]
     [SerializeField] float visionResolution = 1f;
