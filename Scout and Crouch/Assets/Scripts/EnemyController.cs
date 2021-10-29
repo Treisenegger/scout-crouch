@@ -39,7 +39,7 @@ public class EnemyController : MonoBehaviour {
 
     private Vector2 currentPathEndPosition {
         get {
-            return currentPath[currentPath.Length - 1];
+            return currentPath.Length > 0 ? currentPath[currentPath.Length - 1] : Vector2.zero;
         }
     }
 
@@ -75,7 +75,7 @@ public class EnemyController : MonoBehaviour {
     }
 
     private void FixedUpdate() {
-        if (rb.position == currentDestination) {
+        if (rb.position == currentDestination && isMoving) {
             if (currentPathIndex == currentPath.Length - 1) {
                 if (followingGlobalPath) {
                     if (!hasSingleGlobalWaypoint) {
@@ -99,7 +99,7 @@ public class EnemyController : MonoBehaviour {
         }
 
         Move();
-        if (followingGlobalPath && hasSingleGlobalWaypoint && !isMoving) {
+        if (followingGlobalPath && hasSingleGlobalWaypoint && !isMoving && rb.position == currentDestination) {
             RotateTowardsAngle(targetAngle);
         }
         else if (followingGlobalPath) {
@@ -126,8 +126,13 @@ public class EnemyController : MonoBehaviour {
     }
 
     // Set new local path
-    private void SetNewPath(Vector2 _target) {
-        currentPath = Pathfinding.instance.FindPath(transform.position, Math2D.V2ToV3AtZero(_target));
+    private void SetNewPath(Vector2 _target, bool _constrained = false) {
+        if (_constrained) {
+            currentPath = Pathfinding.instance.FindPath(transform.position, Math2D.V2ToV3AtZero(_target), _maxPathLength: -1f, _maxDistToTarget: ev.visionRange + 0.5f, _preserveVisibility: true, _onlyContiguous: true);
+        }
+        else {
+            currentPath = Pathfinding.instance.FindPath(transform.position, Math2D.V2ToV3AtZero(_target));
+        }
 
         if (currentPath.Length == 0) {
             isMoving = false;
@@ -178,12 +183,13 @@ public class EnemyController : MonoBehaviour {
     }
 
     private void RotateTowardsAngle(float _angle) {
-        if (rb.rotation == Quaternion.Euler(0f, _angle, 0f)) {
+        Quaternion _from = rb.rotation;
+        Quaternion _to = Quaternion.Euler(0f, _angle, 0f);
+
+        if (_to == _from) {
             return;
         }
 
-        Quaternion _from = rb.rotation;
-        Quaternion _to = Quaternion.Euler(0f, _angle, 0f);
         float _maxAngle = rotationSpeed * Time.fixedDeltaTime;
         rb.MoveRotation(Quaternion.RotateTowards(_from, _to, _maxAngle));
     }
@@ -212,12 +218,19 @@ public class EnemyController : MonoBehaviour {
 
         if (_detected) {
             lastTargetLocation = _targetLocation;
-            Node _prevTargetNode = movementGrid.GetNodeFromWorldPos(currentPathEndPosition);
-            Node _newTargetNode = movementGrid.GetNodeFromWorldPos(_targetLocation);
 
-            if (_newStatus != status || _prevTargetNode != _newTargetNode) {
-                SetNewPath(Math2D.V3ToV2(_targetLocation));
+            if (isMoving) {
+                Node _prevTargetNode = movementGrid.GetNodeFromWorldPos(Math2D.V2ToV3AtZero(currentPathEndPosition));
+                Node _newTargetNode = movementGrid.GetNodeFromWorldPos(_targetLocation);
+
+                if (_newStatus != status || _prevTargetNode != _newTargetNode) {
+                    Debug.Log($"New status: {_newStatus}, old status: {status}, prev node: {_prevTargetNode.gridPos}, new node: {_newTargetNode.gridPos}");
+                    SetNewPath(Math2D.V3ToV2(_targetLocation), _constrained: true);
+                }
             }
+        }
+        else if (_newStatus != status && _newStatus == Status.Investigating) {
+            SetNewPath(Math2D.V3ToV2(lastTargetLocation));
         }
 
         status = _newStatus;

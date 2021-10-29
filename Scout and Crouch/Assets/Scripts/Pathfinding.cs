@@ -29,15 +29,16 @@ public class Pathfinding : MonoBehaviour {
         while (_openSet.Count > 0) {
             Node _currentNode = _openSet.Pop();
 
-            if (_maxPathLength > 0 && _currentNode.gCost > _maxPathLength) {
+            if (_maxPathLength > 0f && _currentNode.gCost > _maxPathLength) {
                 continue;
             }
 
-            if (_maxDistToTarget > 0 && _currentNode.hCost > _maxDistToTarget) {
+            if (_maxDistToTarget > 0f && _currentNode.hCost > _maxDistToTarget) {
                 continue;
             }
 
-            if (_preserveVisibility && !movementGrid.uprightEdges[_currentNode.gridPos.x, _currentNode.gridPos.y, _endNode.gridPos.x, _endNode.gridPos.y]) {
+            if (_preserveVisibility && !movementGrid.uprightEdges[_currentNode.gridPos.x, _currentNode.gridPos.y, _endNode.gridPos.x, _endNode.gridPos.y] && _currentNode != _endNode) {
+                Debug.Log(_currentNode.gridPos);
                 continue;
             }
 
@@ -72,14 +73,16 @@ public class Pathfinding : MonoBehaviour {
     // Create a 2D position array based on the found path
     private Vector2[] ReconstructPath(Node _startNode, Node _endNode, Vector3 _endPos, bool _simplify = false) {
         List<Vector2> _pathList = new List<Vector2>();
-        _pathList.Add(Math2D.V3ToV2(_endPos));
-        Node _currentNode = _endNode;
-        Node _lastNode = null;
+        // _pathList.Add(Math2D.V3ToV2(_endPos));
+        _pathList.Add(Math2D.V3ToV2(_endNode.worldPos));
+        Node _currentNode = _endNode.parent;
+        Node _lastNode = _endNode;
 
         while (_currentNode != null) {
             if (_currentNode != _startNode && _currentNode != _endNode) {
                 if (_simplify) {
                     if (movementGrid.crouchEdges[_lastNode.gridPos.x, _lastNode.gridPos.y, _currentNode.parent.gridPos.x, _currentNode.parent.gridPos.y]) {
+                        Debug.Log($"Last {_lastNode.gridPos} | Parent {_currentNode.parent.gridPos}");
                         _lastNode.parent = _currentNode.parent;
                     }
                     else {

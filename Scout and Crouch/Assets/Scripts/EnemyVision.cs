@@ -8,7 +8,7 @@ using UnityEngine;
 public class EnemyVision : MonoBehaviour {
 
     [Header("Vision Geometry Parameters")]
-    [SerializeField] float visionRange = 4f;
+    public float visionRange = 4f;
     [Range(0f, 360f)]
     [SerializeField] float visionAngle = 45f;
 

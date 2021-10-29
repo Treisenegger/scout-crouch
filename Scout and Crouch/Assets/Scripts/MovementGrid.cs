@@ -131,8 +131,8 @@ public class MovementGrid : MonoBehaviour {
             Node _enemyNode = GetNodeFromWorldPos(enemy.transform.position);
             // Vector2Int[] _path = pathfinding.FindPath(player.transform.position, enemy.transform.position, 0f);
             foreach (Node _node in nodes) {
-                // Gizmos.color = crouchEdges[_playerNode.gridPos.x, _playerNode.gridPos.y, _node.gridPos.x, _node.gridPos.y] ? Color.red : Color.white;
-                Gizmos.color = uprightEdges[_enemyNode.gridPos.x, _enemyNode.gridPos.y, _node.gridPos.x, _node.gridPos.y] ? Color.red : Color.white;
+                Gizmos.color = crouchEdges[_enemyNode.gridPos.x, _enemyNode.gridPos.y, _node.gridPos.x, _node.gridPos.y] ? Color.red : Color.white;
+                // Gizmos.color = uprightEdges[_enemyNode.gridPos.x, _enemyNode.gridPos.y, _node.gridPos.x, _node.gridPos.y] ? Color.red : Color.white;
                 // Gizmos.color = Array.IndexOf(_path, _node.gridPos) > -1 ? Color.red : Color.white;
                 // Gizmos.DrawCube(_node.worldPos, new Vector3(realNodeWidth, 1f, realNodeHeight) * 0.9f);
                 Gizmos.DrawSphere(_node.worldPos, lineOfSightPrecision);
