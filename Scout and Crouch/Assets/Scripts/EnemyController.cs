@@ -18,6 +18,8 @@ public class EnemyController : MonoBehaviour {
 
     [Header("Path Parameters")]
     [SerializeField] Vector2[] globalPath;
+    [Tooltip("Angle to point towards when reaching global path point in single waypoint global path")]
+    [SerializeField] float targetAngle;
 
     Rigidbody rb;
     EnemyVision ev;
@@ -97,7 +99,10 @@ public class EnemyController : MonoBehaviour {
         }
 
         Move();
-        if (followingGlobalPath) {
+        if (followingGlobalPath && hasSingleGlobalWaypoint && !isMoving) {
+            RotateTowardsAngle(targetAngle);
+        }
+        else if (followingGlobalPath) {
             RotateWithMovement();
         }
         else {
@@ -170,6 +175,17 @@ public class EnemyController : MonoBehaviour {
     // Set rotation to look at the player's last location
     private void RotateTowardsTarget(Vector3 _targetPos) {
         rb.MoveRotation(Quaternion.LookRotation(Math2D.V3ToV3Dir(transform.position, _targetPos), Vector3.up));
+    }
+
+    private void RotateTowardsAngle(float _angle) {
+        if (rb.rotation == Quaternion.Euler(0f, _angle, 0f)) {
+            return;
+        }
+
+        Quaternion _from = rb.rotation;
+        Quaternion _to = Quaternion.Euler(0f, _angle, 0f);
+        float _maxAngle = rotationSpeed * Time.fixedDeltaTime;
+        rb.MoveRotation(Quaternion.RotateTowards(_from, _to, _maxAngle));
     }
 
     // Method called when target is detected by EnemyVision component to set the status field and the last player position

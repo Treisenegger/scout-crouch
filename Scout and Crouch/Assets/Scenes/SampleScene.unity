@@ -850,6 +850,7 @@ MonoBehaviour:
   minDistToTarget: 1
   globalPath:
   - {x: -0.53, y: -3.48}
+  targetAngle: 180
 --- !u!114 &1523417765
 MonoBehaviour:
   m_ObjectHideFlags: 0
