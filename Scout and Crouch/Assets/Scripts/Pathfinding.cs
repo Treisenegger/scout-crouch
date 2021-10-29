@@ -38,7 +38,6 @@ public class Pathfinding : MonoBehaviour {
             }
 
             if (_preserveVisibility && !movementGrid.uprightEdges[_currentNode.gridPos.x, _currentNode.gridPos.y, _endNode.gridPos.x, _endNode.gridPos.y] && _currentNode != _endNode) {
-                Debug.Log(_currentNode.gridPos);
                 continue;
             }
 
@@ -82,7 +81,6 @@ public class Pathfinding : MonoBehaviour {
             if (_currentNode != _startNode && _currentNode != _endNode) {
                 if (_simplify) {
                     if (movementGrid.crouchEdges[_lastNode.gridPos.x, _lastNode.gridPos.y, _currentNode.parent.gridPos.x, _currentNode.parent.gridPos.y]) {
-                        Debug.Log($"Last {_lastNode.gridPos} | Parent {_currentNode.parent.gridPos}");
                         _lastNode.parent = _currentNode.parent;
                     }
                     else {

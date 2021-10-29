@@ -224,7 +224,6 @@ public class EnemyController : MonoBehaviour {
                 Node _newTargetNode = movementGrid.GetNodeFromWorldPos(_targetLocation);
 
                 if (_newStatus != status || _prevTargetNode != _newTargetNode) {
-                    Debug.Log($"New status: {_newStatus}, old status: {status}, prev node: {_prevTargetNode.gridPos}, new node: {_newTargetNode.gridPos}");
                     SetNewPath(Math2D.V3ToV2(_targetLocation), _constrained: true);
                 }
             }
