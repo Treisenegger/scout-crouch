@@ -847,6 +847,7 @@ MonoBehaviour:
   investigationTurnDuration: 1.5
   turnUpdateFreq: 0.03
   movementGrid: {fileID: 1856860870}
+  minDistToTarget: 1
   globalPath:
   - {x: 3.59, y: 2.46}
   - {x: -1.48, y: -1.46}
@@ -875,7 +876,7 @@ MonoBehaviour:
   targetDetectionFreq: 0.02
   crouchHeight: {fileID: 11400000, guid: 9c561fa395f6de9479d6c4546c2ede98, type: 2}
   uprightHeight: {fileID: 11400000, guid: 26b9042aca20f6c4e9dfc673d030945e, type: 2}
-  visionResolution: 1
+  visionResolution: 0.5
   edgeIdIterations: 6
   maxRaycastDst: 0.5
   defaultColor: {r: 1, g: 1, b: 1, a: 0.5}
@@ -1137,7 +1138,7 @@ Transform:
   m_GameObject: {fileID: 1615292475}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -2.5, y: 0.5, z: -2.5}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 3, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 1380419080}
   m_RootOrder: 2

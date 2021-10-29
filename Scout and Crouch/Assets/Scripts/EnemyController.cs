@@ -16,6 +16,7 @@ public class EnemyController : MonoBehaviour {
 
     [Header("Pathfinding Parameters")]
     [SerializeField] MovementGrid movementGrid;
+    [SerializeField] float minDistToTarget = 0.7f;
 
     [Header("Path Parameters")]
     [SerializeField] Vector2[] globalPath;
@@ -45,6 +46,12 @@ public class EnemyController : MonoBehaviour {
     private bool investigating {
         get {
             return status == Status.Investigating;
+        }
+    }
+
+    private bool alerted {
+        get {
+            return status == Status.Alerted;
         }
     }
 
@@ -122,6 +129,11 @@ public class EnemyController : MonoBehaviour {
             return;
         }
 
+        if (alerted && Math2D.V3ToV3Dist(transform.position, lastTargetLocation) < minDistToTarget) {
+            isMoving = false;
+            return;
+        }
+
         Vector3 _from = transform.position;
         Vector3 _to = currentDestination;
         float _maxDist = movementSpeed * Time.fixedDeltaTime;
@@ -152,7 +164,11 @@ public class EnemyController : MonoBehaviour {
         if (_detected) {
             _newStatus = Status.Alerted;
         }
-        else if (status == Status.Alerted || status == Status.Investigating) {
+        else if (status == Status.Alerted) {
+            _newStatus = Status.Investigating;
+            isMoving = true;
+        }
+        else if (status == Status.Investigating) {
             _newStatus = Status.Investigating;
         }
         else {
