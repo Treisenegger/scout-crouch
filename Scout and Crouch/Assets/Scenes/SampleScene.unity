@@ -849,10 +849,7 @@ MonoBehaviour:
   movementGrid: {fileID: 1856860870}
   minDistToTarget: 1
   globalPath:
-  - {x: 3.59, y: 2.46}
-  - {x: -1.48, y: -1.46}
-  - {x: -3.55, y: -1.44}
-  - {x: -3.55, y: 3.3}
+  - {x: -0.53, y: -3.48}
 --- !u!114 &1523417765
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1137,8 +1134,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1615292475}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -2.5, y: 0.5, z: -2.5}
-  m_LocalScale: {x: 3, y: 1, z: 1}
+  m_LocalPosition: {x: 0, y: 0.5, z: -2.5}
+  m_LocalScale: {x: 10, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 1380419080}
   m_RootOrder: 2

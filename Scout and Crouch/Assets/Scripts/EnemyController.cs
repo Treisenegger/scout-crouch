@@ -2,8 +2,6 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-// TODO: - Implement rotation snap to last player position on investigating status
-
 [RequireComponent(typeof(Rigidbody))]
 [RequireComponent(typeof(EnemyVision))]
 public class EnemyController : MonoBehaviour {
@@ -55,6 +53,12 @@ public class EnemyController : MonoBehaviour {
         }
     }
 
+    private bool hasSingleGlobalWaypoint {
+        get {
+            return globalPath.Length == 1;
+        }
+    }
+
     private enum Status {
         Normal,
         Alerted,
@@ -72,8 +76,13 @@ public class EnemyController : MonoBehaviour {
         if (rb.position == currentDestination) {
             if (currentPathIndex == currentPath.Length - 1) {
                 if (followingGlobalPath) {
-                    AdvanceGlobalPath();
-                    SetPathToGlobalWaypoint();
+                    if (!hasSingleGlobalWaypoint) {
+                        AdvanceGlobalPath();
+                        SetPathToGlobalWaypoint();
+                    }
+                    else {
+                        isMoving = false;
+                    }
                 }
                 else if (investigating) {
                     StartInvestigativeTurn();
@@ -114,6 +123,12 @@ public class EnemyController : MonoBehaviour {
     // Set new local path
     private void SetNewPath(Vector2 _target) {
         currentPath = Pathfinding.instance.FindPath(transform.position, Math2D.V2ToV3AtZero(_target));
+
+        if (currentPath.Length == 0) {
+            isMoving = false;
+            return;
+        }
+
         currentPathIndex = 0;
         UpdateDestination();
     }
@@ -162,13 +177,17 @@ public class EnemyController : MonoBehaviour {
         Status _newStatus;
 
         if (_detected) {
+            if (!alerted) {
+                isMoving = true;
+            }
+
             _newStatus = Status.Alerted;
         }
-        else if (status == Status.Alerted) {
+        else if (alerted) {
             _newStatus = Status.Investigating;
             isMoving = true;
         }
-        else if (status == Status.Investigating) {
+        else if (investigating) {
             _newStatus = Status.Investigating;
         }
         else {
