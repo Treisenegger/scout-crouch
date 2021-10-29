@@ -25,29 +25,39 @@ public class EnemyVision : MonoBehaviour {
     [SerializeField] float visionResolution = 1f;
     [SerializeField] int edgeIdIterations = 6;
     [SerializeField] float maxRaycastDst = 0.5f;
-    [SerializeField] Color defaultColor = new Color(1f, 1f, 1f, 0.5f);
-    [SerializeField] Color alertedColor = new Color(1f, 0f, 0f, 0.5f);
-    [SerializeField] MeshFilter visionConeMeshFilter;
-    [SerializeField] Transform visionConeBase;
+    [SerializeField] Color defaultColor = new Color(1f, 1f, 1f, 0.3f);
+    [SerializeField] Color alertedColor = new Color(1f, 0f, 0f, 0.3f);
+    [SerializeField] MeshFilter crouchMeshFilter;
+    [SerializeField] Transform crouchConeBase;
+    [SerializeField] MeshFilter uprightMeshFilter;
+    [SerializeField] Transform uprightConeBase;
 
-    Mesh visionConeMesh;
+    Mesh crouchConeMesh;
+    Mesh uprightConeMesh;
     bool isAlerted = false;
     EnemyController ec;
-    MeshRenderer meshRenderer;
+    MeshRenderer crouchMeshRenderer;
+    MeshRenderer uprightMeshRenderer;
 
     private void Start() {
         ec = GetComponent<EnemyController>();
 
-        visionConeMesh = new Mesh();
-        visionConeMesh.name = "Vision Cone Mesh";
-        visionConeMeshFilter.mesh = visionConeMesh;
-        meshRenderer = visionConeMeshFilter.GetComponent<MeshRenderer>();
+        crouchConeMesh = new Mesh();
+        crouchConeMesh.name = "Vision Cone Mesh";
+        crouchMeshFilter.mesh = crouchConeMesh;
+        crouchMeshRenderer = crouchMeshFilter.GetComponent<MeshRenderer>();
+
+        uprightConeMesh = new Mesh();
+        uprightConeMesh.name = "Vision Cone Mesh";
+        uprightMeshFilter.mesh = uprightConeMesh;
+        uprightMeshRenderer = uprightMeshFilter.GetComponent<MeshRenderer>();
 
         StartCoroutine(InitiatePlayerDetection());
     }
 
     private void LateUpdate() {
-        DrawVisionCone();
+        DrawVisionCone(crouchConeMesh, crouchHeight.Value);
+        DrawVisionCone(uprightConeMesh, uprightHeight.Value);
     }
 
     public Vector3 DirFromAngle(float _angleInDegrees, bool _angleIsGlobal) {
@@ -86,7 +96,12 @@ public class EnemyVision : MonoBehaviour {
 
         // Determine if player is occluded
         float _distanceToPlayer = Math2D.V3ToV3Dist(transform.position, _player.transform.position);
-        bool _occluded = Physics.Raycast(transform.position, _directionToPlayer, _distanceToPlayer, obstacleMask);
+        bool _occluded = Physics.Raycast(Math2D.V3AtHeight(transform.position, crouchHeight.Value), _directionToPlayer, _distanceToPlayer, obstacleMask);
+
+        if (_occluded) {
+            _occluded = Physics.Raycast(Math2D.V3AtHeight(transform.position, uprightHeight.Value), _directionToPlayer, _distanceToPlayer, obstacleMask);
+        }
+
         if (_occluded) {
             ec.TargetDetected(false, Vector3.zero);
             SetAlerted(false);
@@ -99,10 +114,11 @@ public class EnemyVision : MonoBehaviour {
 
     private void SetAlerted(bool _isAlerted) {
         isAlerted = _isAlerted;
-        meshRenderer.material.SetColor("_Color", isAlerted ? alertedColor : defaultColor);
+        crouchMeshRenderer.material.SetColor("_Color", isAlerted ? alertedColor : defaultColor);
+        uprightMeshRenderer.material.SetColor("_Color", isAlerted ? alertedColor : defaultColor);
     }
 
-    private void DrawVisionCone() {
+    private void DrawVisionCone(Mesh _coneMesh, float _height) {
         int _stepCount = Mathf.RoundToInt(visionAngle * visionResolution);
         float _stepAngleSize = visionAngle / _stepCount;
         ViewCastInfo _oldViewCast = new ViewCastInfo();
@@ -110,12 +126,12 @@ public class EnemyVision : MonoBehaviour {
 
         for (int i = 0; i < _stepCount + 1; i++) {
             float _angle = transform.eulerAngles.y - (visionAngle / 2) + i * _stepAngleSize;
-            ViewCastInfo _newViewCast = ViewCast(_angle);
+            ViewCastInfo _newViewCast = ViewCast(_angle, _height);
 
             if (i > 0) {
                 bool _maxDstExceeded = Mathf.Abs(_oldViewCast.distance - _newViewCast.distance) > maxRaycastDst;
                 if (_newViewCast.hit != _oldViewCast.hit || (_oldViewCast.hit && _newViewCast.hit && _maxDstExceeded)) {
-                    PointPair _edgePoints = FindEdge(_oldViewCast, _newViewCast);
+                    PointPair _edgePoints = FindEdge(_oldViewCast, _newViewCast, _height);
                     _viewPoints.Add(_edgePoints.pointA);
                     _viewPoints.Add(_edgePoints.pointB);
                 }
@@ -128,12 +144,10 @@ public class EnemyVision : MonoBehaviour {
         int _vertexCount = _viewPoints.Count + 1;
         Vector3[] _vertices = new Vector3[_vertexCount];
         int[] _triangles = new int[(_vertexCount - 2) * 3];
-        // Debug.Log(visionConeBase.position);
-        _vertices[0] = visionConeBase.localPosition;
+        _vertices[0] = crouchConeBase.localPosition;
 
         for (int i = 0; i < _vertexCount - 1; i++) {
-            _vertices[i + 1] = transform.InverseTransformPoint(_viewPoints[i]) + visionConeBase.localPosition;
-            // Debug.DrawLine(transform.position, _viewPoints[i], Color.black);
+            _vertices[i + 1] = transform.InverseTransformPoint(_viewPoints[i]) + crouchConeBase.localPosition;
 
             if (i < _vertexCount - 2) {
                 _triangles[3*i] = 0;
@@ -142,18 +156,18 @@ public class EnemyVision : MonoBehaviour {
             }
         }
 
-        visionConeMesh.Clear();
-        visionConeMesh.vertices = _vertices;
-        visionConeMesh.triangles = _triangles;
-        visionConeMesh.RecalculateNormals();
+        _coneMesh.Clear();
+        _coneMesh.vertices = _vertices;
+        _coneMesh.triangles = _triangles;
+        _coneMesh.RecalculateNormals();
     }
 
-    private PointPair FindEdge(ViewCastInfo _vcInfoA, ViewCastInfo _vcInfoB) {
+    private PointPair FindEdge(ViewCastInfo _vcInfoA, ViewCastInfo _vcInfoB, float _height) {
         ViewCastInfo _vcMin = _vcInfoA;
         ViewCastInfo _vcMax = _vcInfoB;
 
         for (int i = 0; i < edgeIdIterations; i++) {
-            ViewCastInfo _vcMid = ViewCast((_vcMin.angle + _vcMax.angle) / 2);
+            ViewCastInfo _vcMid = ViewCast((_vcMin.angle + _vcMax.angle) / 2, _height);
                 bool _maxDstExceeded = Mathf.Abs(_vcMin.distance - _vcMid.distance) > maxRaycastDst;
             if (_vcMid.hit == _vcMin.hit && !_maxDstExceeded) {
                 _vcMin = _vcMid;
@@ -176,13 +190,13 @@ public class EnemyVision : MonoBehaviour {
         }
     }
 
-    private ViewCastInfo ViewCast(float _globalAngle) {
+    private ViewCastInfo ViewCast(float _globalAngle, float _height) {
         Vector3 _dir = DirFromAngle(_globalAngle, true);
         RaycastHit _hit;
 
-        bool _collided = Physics.Raycast(transform.position, _dir, out _hit, visionRange, obstacleMask);
+        bool _collided = Physics.Raycast(Math2D.V3AtHeight(transform.position, _height), _dir, out _hit, visionRange, obstacleMask);
         if (_collided) {
-            return new ViewCastInfo(true, _hit.point, _hit.distance, _globalAngle);
+            return new ViewCastInfo(true, Math2D.V3AtHeight(_hit.point, transform.position.y), _hit.distance, _globalAngle);
         }
         else {
             return new ViewCastInfo(false, transform.position + _dir * visionRange, visionRange, _globalAngle);
