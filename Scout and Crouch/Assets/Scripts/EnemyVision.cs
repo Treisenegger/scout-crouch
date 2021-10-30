@@ -98,6 +98,9 @@ public class EnemyVision : MonoBehaviour {
 
         if (_occluded) {
             _occluded = Physics.Raycast(Math2D.V3AtHeight(transform.position, uprightHeight.Value), _directionToPlayer, _distanceToPlayer, obstacleMask);
+            if (!_occluded) {
+                _occluded = !Physics.Raycast(Math2D.V3AtHeight(transform.position, uprightHeight.Value), _directionToPlayer, _distanceToPlayer, playerMask);
+            }
         }
 
         if (_occluded) {
