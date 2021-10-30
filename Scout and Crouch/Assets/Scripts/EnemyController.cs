@@ -6,6 +6,9 @@ using UnityEngine;
 [RequireComponent(typeof(EnemyVision))]
 public class EnemyController : MonoBehaviour {
 
+    [SerializeField] CapsuleCollider parentCollider;
+    [SerializeField] CapsuleCollider childCollider;
+
     [Header("Movement Parameters")]
     [SerializeField] float movementSpeed = 3f;
     [SerializeField] float rotationSpeed = 180f;
@@ -64,6 +67,8 @@ public class EnemyController : MonoBehaviour {
     private void Start() {
         rb = GetComponent<Rigidbody>();
         ev = GetComponent<EnemyVision>();
+
+        Physics.IgnoreCollision(parentCollider, childCollider);
 
         SetPathToGlobalWaypoint();
     }
@@ -166,6 +171,10 @@ public class EnemyController : MonoBehaviour {
 
     // Gradually rotate the enemy towards its moving direction on normal status
     private void RotateWithMovement() {
+        if (rb.position == currentDestination) {
+            return;
+        }
+
         Quaternion _from = rb.rotation;
         Quaternion _to = Quaternion.LookRotation((currentDestination - rb.position).normalized, Vector3.up);
 
