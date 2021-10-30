@@ -72,8 +72,8 @@ public class Pathfinding : MonoBehaviour {
     // Create a 2D position array based on the found path
     private Vector2[] ReconstructPath(Node _startNode, Node _endNode, Vector3 _endPos, bool _simplify = false) {
         List<Vector2> _pathList = new List<Vector2>();
-        // _pathList.Add(Math2D.V3ToV2(_endPos));
-        _pathList.Add(Math2D.V3ToV2(_endNode.worldPos));
+        _pathList.Add(Math2D.V3ToV2(_endPos));
+        // _pathList.Add(Math2D.V3ToV2(_endNode.worldPos));
         Node _currentNode = _endNode.parent;
         Node _lastNode = _endNode;
 

@@ -37,12 +37,6 @@ public class EnemyController : MonoBehaviour {
         }
     }
 
-    private Vector2 currentPathEndPosition {
-        get {
-            return currentPath.Length > 0 ? currentPath[currentPath.Length - 1] : Vector2.zero;
-        }
-    }
-
     private bool investigating {
         get {
             return status == Status.Investigating;
@@ -55,9 +49,9 @@ public class EnemyController : MonoBehaviour {
         }
     }
 
-    private bool hasSingleGlobalWaypoint {
+    private Vector2 currentPathEndPosition {
         get {
-            return globalPath.Length == 1;
+            return currentPath.Length > 0 ? currentPath[currentPath.Length - 1] : Vector2.zero;
         }
     }
 
@@ -75,15 +69,19 @@ public class EnemyController : MonoBehaviour {
     }
 
     private void FixedUpdate() {
-        if (rb.position == currentDestination && isMoving) {
-            if (currentPathIndex == currentPath.Length - 1) {
+        bool _atDestination = rb.position == currentDestination;
+        bool _atEndOfPath = currentPathIndex == currentPath.Length - 1;
+        bool _hasOneWayPoint = globalPath.Length == 1;
+
+        if (isMoving && _atDestination) {
+            if (_atEndOfPath) {
                 if (followingGlobalPath) {
-                    if (!hasSingleGlobalWaypoint) {
-                        AdvanceGlobalPath();
-                        SetPathToGlobalWaypoint();
+                    if (_hasOneWayPoint) {
+                        isMoving = false;
                     }
                     else {
-                        isMoving = false;
+                        AdvanceGlobalPath();
+                        SetPathToGlobalWaypoint();
                     }
                 }
                 else if (investigating) {
@@ -98,12 +96,17 @@ public class EnemyController : MonoBehaviour {
             }
         }
 
-        Move();
-        if (followingGlobalPath && hasSingleGlobalWaypoint && !isMoving && rb.position == currentDestination) {
-            RotateTowardsAngle(targetAngle);
+        if (isMoving) {
+            Move();
         }
-        else if (followingGlobalPath) {
-            RotateWithMovement();
+
+        if (followingGlobalPath) {
+            if (!isMoving && _atDestination && _hasOneWayPoint) {
+                RotateTowardsAngle(targetAngle);
+            }
+            else if (isMoving && !_atDestination) {
+                RotateWithMovement();
+            }
         }
         else {
             RotateTowardsTarget(lastTargetLocation);
@@ -128,7 +131,7 @@ public class EnemyController : MonoBehaviour {
     // Set new local path
     private void SetNewPath(Vector2 _target, bool _constrained = false) {
         if (_constrained) {
-            currentPath = Pathfinding.instance.FindPath(transform.position, Math2D.V2ToV3AtZero(_target), _maxPathLength: -1f, _maxDistToTarget: ev.visionRange + 0.5f, _preserveVisibility: true, _onlyContiguous: true);
+            currentPath = Pathfinding.instance.FindPath(transform.position, Math2D.V2ToV3AtZero(_target), -1f, ev.visionRange + 0.5f, true, true);
         }
         else {
             currentPath = Pathfinding.instance.FindPath(transform.position, Math2D.V2ToV3AtZero(_target));
@@ -150,10 +153,6 @@ public class EnemyController : MonoBehaviour {
 
     // Move the enemy towards its next destination in the local path
     private void Move() {
-        if (!isMoving) {
-            return;
-        }
-
         if (alerted && Math2D.V3ToV3Dist(transform.position, lastTargetLocation) < minDistToTarget) {
             isMoving = false;
             return;
@@ -167,19 +166,15 @@ public class EnemyController : MonoBehaviour {
 
     // Gradually rotate the enemy towards its moving direction on normal status
     private void RotateWithMovement() {
-        if (!isMoving || currentDestination == rb.position) {
+        Quaternion _from = rb.rotation;
+        Quaternion _to = Quaternion.LookRotation((currentDestination - rb.position).normalized, Vector3.up);
+
+        if (_to == _from) {
             return;
         }
 
-        Quaternion _from = rb.rotation;
-        Quaternion _to = Quaternion.LookRotation((currentDestination - rb.position).normalized, Vector3.up);
         float _maxAngle = rotationSpeed * Time.fixedDeltaTime;
         rb.MoveRotation(Quaternion.RotateTowards(_from, _to, _maxAngle));
-    }
-
-    // Set rotation to look at the player's last location
-    private void RotateTowardsTarget(Vector3 _targetPos) {
-        rb.MoveRotation(Quaternion.LookRotation(Math2D.V3ToV3Dir(transform.position, _targetPos), Vector3.up));
     }
 
     private void RotateTowardsAngle(float _angle) {
@@ -194,45 +189,36 @@ public class EnemyController : MonoBehaviour {
         rb.MoveRotation(Quaternion.RotateTowards(_from, _to, _maxAngle));
     }
 
+    // Set rotation to look at the player's last location
+    private void RotateTowardsTarget(Vector3 _targetPos) {
+        rb.MoveRotation(Quaternion.LookRotation(Math2D.V3ToV3Dir(transform.position, _targetPos), Vector3.up));
+    }
+
     // Method called when target is detected by EnemyVision component to set the status field and the last player position
     public void TargetDetected(bool _detected, Vector3 _targetLocation) {
-        Status _newStatus;
-
         if (_detected) {
-            if (!alerted) {
+            Node _prevTargetNode = movementGrid.GetNodeFromWorldPos(Math2D.V2ToV3AtZero(currentPathEndPosition));
+            Node _newTargetNode = movementGrid.GetNodeFromWorldPos(_targetLocation);
+
+            if (!alerted || (isMoving && _prevTargetNode != _newTargetNode)) {
                 isMoving = true;
+                SetNewPath(Math2D.V3ToV2(_targetLocation), true);
             }
 
-            _newStatus = Status.Alerted;
+            lastTargetLocation = _targetLocation;
+            status = Status.Alerted;
         }
         else if (alerted) {
-            _newStatus = Status.Investigating;
             isMoving = true;
+            SetNewPath(Math2D.V3ToV2(lastTargetLocation));
+            status = Status.Investigating;
         }
         else if (investigating) {
-            _newStatus = Status.Investigating;
+            status = Status.Investigating;
         }
         else {
-            _newStatus = Status.Normal;
+            status = Status.Normal;
         }
-
-        if (_detected) {
-            lastTargetLocation = _targetLocation;
-
-            if (isMoving) {
-                Node _prevTargetNode = movementGrid.GetNodeFromWorldPos(Math2D.V2ToV3AtZero(currentPathEndPosition));
-                Node _newTargetNode = movementGrid.GetNodeFromWorldPos(_targetLocation);
-
-                if (_newStatus != status || _prevTargetNode != _newTargetNode) {
-                    SetNewPath(Math2D.V3ToV2(_targetLocation), _constrained: true);
-                }
-            }
-        }
-        else if (_newStatus != status && _newStatus == Status.Investigating) {
-            SetNewPath(Math2D.V3ToV2(lastTargetLocation));
-        }
-
-        status = _newStatus;
     }
 
     private void StartInvestigativeTurn() {

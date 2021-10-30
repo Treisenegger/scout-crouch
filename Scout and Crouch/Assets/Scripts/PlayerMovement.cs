@@ -10,7 +10,7 @@ public class PlayerMovement : MonoBehaviour {
 
     Vector3 movDir = Vector3.zero;
     Rigidbody rb;
-    bool crouching = false;
+    // bool crouching = false;
 
     private void Start() {
         rb = GetComponent<Rigidbody>();
