@@ -1157,6 +1157,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   movementSpeed: 4
+  crouchHeight: {fileID: 11400000, guid: 9c561fa395f6de9479d6c4546c2ede98, type: 2}
+  obstacleMask:
+    serializedVersion: 2
+    m_Bits: 256
 --- !u!95 &1322736686
 Animator:
   serializedVersion: 3
