@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System;
 using UnityEngine;
 
-// TODO: - Implement pathfinding with several restrictions: with max path length, that preserves max distance from target
-//          and that preserves line of sight towards target 
 [RequireComponent(typeof(MovementGrid))]
 public class Pathfinding : MonoBehaviour {
 
