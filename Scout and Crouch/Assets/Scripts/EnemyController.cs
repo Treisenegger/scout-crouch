@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using UnityEngine;
 
 // TODO: - Implement wait time on global waypoints and target rotation
-// - Fix bug when last player known position is too close to an obstacle (enemy gets stuck)
 
 [RequireComponent(typeof(Rigidbody))]
 [RequireComponent(typeof(EnemyVision))]
