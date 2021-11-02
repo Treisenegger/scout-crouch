@@ -1161,6 +1161,9 @@ MonoBehaviour:
   obstacleMask:
     serializedVersion: 2
     m_Bits: 256
+  crouchMaxDistToObstacle: 0.5
+  crouchDistToObstacle: 0.4
+  crouchDistToEdge: 0.2
 --- !u!95 &1322736686
 Animator:
   serializedVersion: 3
