@@ -2,6 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+// TODO: - Implement wait time on global waypoints and target rotation
+
 [RequireComponent(typeof(Rigidbody))]
 [RequireComponent(typeof(EnemyVision))]
 public class EnemyController : MonoBehaviour {
@@ -18,6 +20,7 @@ public class EnemyController : MonoBehaviour {
     [Header("Pathfinding Parameters")]
     [SerializeField] MovementGrid movementGrid;
     [SerializeField] float minDistToTarget = 0.7f;
+    [SerializeField] float maxAlertedPathLength = 7f;
 
     [Header("Path Parameters")]
     [SerializeField] Vector2[] globalPath;
@@ -136,7 +139,7 @@ public class EnemyController : MonoBehaviour {
     // Set new local path
     private void SetNewPath(Vector2 _target, bool _constrained = false) {
         if (_constrained) {
-            currentPath = Pathfinding.instance.FindPath(transform.position, Math2D.V2ToV3AtZero(_target), -1f, ev.visionRange + 0.5f, true, true);
+            currentPath = Pathfinding.instance.FindPath(transform.position, Math2D.V2ToV3AtZero(_target), maxAlertedPathLength, ev.visionRange, false, false);
         }
         else {
             currentPath = Pathfinding.instance.FindPath(transform.position, Math2D.V2ToV3AtZero(_target));
@@ -255,5 +258,7 @@ public class EnemyController : MonoBehaviour {
             Gizmos.color = Color.cyan;
             Gizmos.DrawSphere(_sphereCenter, 0.1f);
         }
+
+        Gizmos.DrawWireSphere(Math2D.V3AtZero(transform.position), maxAlertedPathLength);
     }
 }

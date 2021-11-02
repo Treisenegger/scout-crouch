@@ -22,7 +22,7 @@ public class Pathfinding : MonoBehaviour {
         Node _startNode = movementGrid.GetNodeFromWorldPos(_startPos);
         Node _endNode = movementGrid.GetNodeFromWorldPos(_endPos);
         _openSet.Add(_startNode);
-        _startNode.UpdateParameters(null, 0f, Vector3.Distance(_startNode.worldPos, _endNode.worldPos));
+        _startNode.UpdateParameters(null, 0f, Vector3.Distance(_startNode.worldPos, _endPos));
 
         while (_openSet.Count > 0) {
             Node _currentNode = _openSet.Pop();
@@ -31,7 +31,7 @@ public class Pathfinding : MonoBehaviour {
                 continue;
             }
 
-            if (_maxDistToTarget > 0f && _currentNode.hCost > _maxDistToTarget) {
+            if (_maxDistToTarget > 0f && _currentNode != _startNode && _currentNode.hCost > _maxDistToTarget) {
                 continue;
             }
 
@@ -50,9 +50,12 @@ public class Pathfinding : MonoBehaviour {
                     continue;
                 }
                 bool _inOpenSet = _openSet.Contains(_neighbour);
-                float _newGCost = _currentNode.gCost + Math2D.V3ToV3Dist(_currentNode.worldPos, _neighbour.worldPos);
+                Vector3 _currentPos = _currentNode == _startNode ? _startPos : _currentNode.worldPos;
+                Vector3 _neighbourPos = _currentNode == _endNode ? _endPos : _neighbour.worldPos;
+                float _newGCost = _currentNode.gCost + Math2D.V3ToV3Dist(_currentPos, _neighbourPos);
+                
                 if (!_inOpenSet || _newGCost < _neighbour.gCost) {
-                    _neighbour.UpdateParameters(_currentNode, _newGCost, Math2D.V3ToV3Dist(_neighbour.worldPos, _endNode.worldPos));
+                    _neighbour.UpdateParameters(_currentNode, _newGCost, Math2D.V3ToV3Dist(_neighbour.worldPos, _endPos));
 
                     if (!_inOpenSet) {
                         _openSet.Add(_neighbour);

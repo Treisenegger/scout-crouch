@@ -1484,6 +1484,7 @@ MonoBehaviour:
   turnUpdateFreq: 0.03
   movementGrid: {fileID: 1856860870}
   minDistToTarget: 1
+  maxAlertedPathLength: 8
   globalPath:
   - {x: -0.5, y: -4.5}
   targetAngle: 0
