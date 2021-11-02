@@ -18,8 +18,8 @@ public class MovementGrid : MonoBehaviour {
     [SerializeField] float nodeWidth = 1f;
 
     [Header("Line of Sight Detection Parameters")]
-    [SerializeField] FloatVariable crouchHeight; // might be better to implement this variable universally
-    [SerializeField] FloatVariable uprightHeight; // same as above
+    [SerializeField] FloatVariable crouchHeight;
+    [SerializeField] FloatVariable uprightHeight;
     [Range(0, 1)]
     [SerializeField] float lineOfSightPrecision = 0.5f;
     [SerializeField] LayerMask obstacleMask;

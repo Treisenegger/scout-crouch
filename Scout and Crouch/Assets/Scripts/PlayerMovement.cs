@@ -4,6 +4,7 @@ using UnityEngine;
 
 // TODO: - Implement crouching
 // - Implement cooldown between crouching/uncrouching
+// - Implement rotating over edge
 [RequireComponent(typeof(Rigidbody))]
 [RequireComponent(typeof(Animator))]
 public class PlayerMovement : MonoBehaviour {

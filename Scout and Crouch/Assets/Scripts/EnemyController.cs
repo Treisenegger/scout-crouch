@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 // TODO: - Implement wait time on global waypoints and target rotation
+// - Fix bug when last player known position is too close to an obstacle (enemy gets stuck)
 
 [RequireComponent(typeof(Rigidbody))]
 [RequireComponent(typeof(EnemyVision))]
@@ -21,6 +22,7 @@ public class EnemyController : MonoBehaviour {
     [SerializeField] MovementGrid movementGrid;
     [SerializeField] float minDistToTarget = 0.7f;
     [SerializeField] float maxAlertedPathLength = 7f;
+    [SerializeField] float maxDistToEnd = 0.1f;
 
     [Header("Path Parameters")]
     [SerializeField] Vector2[] globalPath;
@@ -102,6 +104,11 @@ public class EnemyController : MonoBehaviour {
                 AdvanceCurrentPath();
                 UpdateDestination();
             }
+        }
+        else if (isMoving && _atEndOfPath && investigating && Math2D.V3ToV3Dist(transform.position, currentDestination) < maxDistToEnd) {
+            StartInvestigativeTurn();
+            status = Status.Normal;
+            SetPathToGlobalWaypoint();
         }
 
         if (isMoving) {
