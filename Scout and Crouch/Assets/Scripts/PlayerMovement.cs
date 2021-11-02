@@ -17,11 +17,11 @@ public class PlayerMovement : MonoBehaviour {
     [SerializeField] float crouchDistToObstacle = 0.4f;
     [SerializeField] float crouchDistToEdge = 0.2f;
 
-    // Vector3 movDir = Vector3.zero;
     Rigidbody rb;
     Animator anim;
     bool crouched = false;
-    Vector3 crouchDir = Vector3.zero;
+    int crouchDirIndex = -1;
+    Vector3[] directions = new Vector3[] { Vector3.forward, Vector3.right, Vector3.back, Vector3.left };
 
     private void Start() {
         rb = GetComponent<Rigidbody>();
@@ -29,13 +29,6 @@ public class PlayerMovement : MonoBehaviour {
     }
 
     private void Update() {
-        if (crouched) {
-            MoveCrouched();
-        }
-        else {
-            Move();
-        }
-
         if (Input.GetKey(KeyCode.LeftShift) && !crouched) {
             Crouch();
         }
@@ -44,15 +37,23 @@ public class PlayerMovement : MonoBehaviour {
         }
     }
 
+    private void FixedUpdate() {
+        if (crouched) {
+            MoveCrouched();
+        }
+        else {
+            Move();
+        }
+    }
+
     private void Crouch() {
         RaycastHit _hit = new RaycastHit();
         float _minAngle = 181f;
-        Vector3 _minDir = Vector3.zero;
-        Vector3[] _directions = new Vector3[] { Vector3.forward, Vector3.right, Vector3.back, Vector3.left };
+        int _minDirIndex = -1;
 
-        for (int i = 0; i < _directions.Length; i++) {
-            Vector3 _dir = _directions[i];
-            Vector3 _offset = _directions[(i + 1) % _directions.Length];
+        for (int i = 0; i < directions.Length; i++) {
+            Vector3 _dir = directions[i];
+            Vector3 _offset = directions[(i + 1) % directions.Length];
             float _angle = Vector3.Angle(transform.forward, _dir);
             if (_angle < _minAngle) {
                 bool _foundRight = Physics.Raycast(Math2D.V3AtHeight(transform.position + _offset * crouchDistToEdge, crouchHeight.Value), _dir, crouchMaxDistToObstacle, obstacleMask);
@@ -60,16 +61,16 @@ public class PlayerMovement : MonoBehaviour {
                 if (_foundRight && _foundLeft) {
                     Physics.Raycast(Math2D.V3AtHeight(transform.position, crouchHeight.Value), _dir, out _hit, crouchMaxDistToObstacle, obstacleMask);
                     _minAngle = _angle;
-                    _minDir = _dir;
+                    _minDirIndex = i;
                 }
             }
         }
 
         if (_minAngle <= 180f) {
             crouched = true;
-            crouchDir = _minDir;
-            rb.MovePosition(Math2D.V3AtHeight(_hit.point - _minDir * crouchDistToObstacle, transform.position.y));
-            rb.MoveRotation(Quaternion.LookRotation(-_minDir, Vector3.up));
+            crouchDirIndex = _minDirIndex;
+            rb.MovePosition(Math2D.V3AtHeight(_hit.point - directions[_minDirIndex] * crouchDistToObstacle, transform.position.y));
+            rb.MoveRotation(Quaternion.LookRotation(-directions[_minDirIndex], Vector3.up));
             anim.SetTrigger("Crouching");
         }
     }
@@ -86,6 +87,7 @@ public class PlayerMovement : MonoBehaviour {
         float _movZ = Input.GetAxisRaw("Vertical");
         Vector3 _movDir = new Vector3(_movX, 0f, _movZ).normalized;
 
+        rb.MovePosition(transform.position + _movDir * movementSpeed * Time.fixedDeltaTime);
         rb.velocity = _movDir * movementSpeed;
         if (_movDir != Vector3.zero) {
             rb.MoveRotation(Quaternion.LookRotation(_movDir, Vector3.up));
@@ -93,15 +95,33 @@ public class PlayerMovement : MonoBehaviour {
     }
 
     private void MoveCrouched() {
-        if (crouchDir == Vector3.forward || crouchDir == Vector3.back) {
-            float _movX = Input.GetAxisRaw("Horizontal");
-            Vector3 _movDir = Vector3.right * _movX;
-            rb.velocity = _movDir * crouchedMovementSpeed;
+        Vector3 _crouchDir = Vector3.zero;
+        Vector3 _movDir = Vector3.zero;
+        Vector3 _offset = Vector3.zero;
+
+        if (crouchDirIndex >= 0) {
+            _crouchDir = directions[crouchDirIndex];
+            _offset = directions[(crouchDirIndex + 1) % directions.Length];
         }
-        else if (crouchDir == Vector3.right || crouchDir == Vector3.left) {
+        else {
+            return;
+        }
+
+        if (_crouchDir == Vector3.forward || _crouchDir == Vector3.back) {
+            float _movX = Input.GetAxisRaw("Horizontal");
+            _movDir = Vector3.right * _movX;
+        }
+        else if (_crouchDir == Vector3.right || _crouchDir == Vector3.left) {
             float _movZ = Input.GetAxisRaw("Vertical");
-            Vector3 _movDir = Vector3.forward * _movZ;
-            rb.velocity = _movDir * crouchedMovementSpeed;
+            _movDir = Vector3.forward * _movZ;
+        }
+
+        Vector3 _newPos = transform.position + _movDir * crouchedMovementSpeed * Time.fixedDeltaTime;
+        bool _foundRight = Physics.Raycast(Math2D.V3AtHeight(_newPos + _offset * crouchDistToEdge, crouchHeight.Value), _crouchDir, crouchMaxDistToObstacle, obstacleMask);
+        bool _foundLeft = Physics.Raycast(Math2D.V3AtHeight(_newPos - _offset * crouchDistToEdge, crouchHeight.Value), _crouchDir, crouchMaxDistToObstacle, obstacleMask);
+
+        if (_foundLeft && _foundRight) {
+            rb.MovePosition(_newPos);
         }
     }
 }
