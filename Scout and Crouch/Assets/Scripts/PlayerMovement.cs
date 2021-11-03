@@ -33,7 +33,7 @@ public class PlayerMovement : MonoBehaviour {
         if (Input.GetKey(KeyCode.LeftShift) && !crouched) {
             Crouch();
         }
-        else if (Input.GetKeyUp(KeyCode.LeftShift)) {
+        else if (Input.GetKeyUp(KeyCode.LeftShift) && crouched) {
             Uncrouch();
         }
     }
@@ -89,7 +89,6 @@ public class PlayerMovement : MonoBehaviour {
         Vector3 _movDir = new Vector3(_movX, 0f, _movZ).normalized;
 
         rb.MovePosition(transform.position + _movDir * movementSpeed * Time.fixedDeltaTime);
-        rb.velocity = _movDir * movementSpeed;
         if (_movDir != Vector3.zero) {
             rb.MoveRotation(Quaternion.LookRotation(_movDir, Vector3.up));
         }

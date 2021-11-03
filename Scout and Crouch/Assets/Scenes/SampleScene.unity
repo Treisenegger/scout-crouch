@@ -1121,7 +1121,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1322736681}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.34, y: 1, z: 1.62}
+  m_LocalPosition: {x: -0.46, y: 1, z: 1.42}
   m_LocalScale: {x: 0.7, y: 1, z: 0.7}
   m_Children:
   - {fileID: 444389787}
@@ -1156,7 +1156,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ff3f6d8ea4f5dd1468afc6cf3e1b1f1a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  movementSpeed: 1.5
+  movementSpeed: 4
   crouchedMovementSpeed: 2
   crouchHeight: {fileID: 11400000, guid: 9c561fa395f6de9479d6c4546c2ede98, type: 2}
   obstacleMask:
@@ -1164,7 +1164,7 @@ MonoBehaviour:
     m_Bits: 256
   crouchMaxDistToObstacle: 0.5
   crouchDistToObstacle: 0.4
-  crouchDistToEdge: 0.2
+  crouchDistToEdge: 0.3
 --- !u!95 &1322736686
 Animator:
   serializedVersion: 3
@@ -1488,7 +1488,7 @@ MonoBehaviour:
   turnUpdateFreq: 0.03
   movementGrid: {fileID: 1856860870}
   minDistToTarget: 1
-  maxAlertedPathLength: 8
+  maxAlertedPathLength: 6
   maxDistToEnd: 0.1
   globalPath:
   - {x: -0.5, y: -4.5}
