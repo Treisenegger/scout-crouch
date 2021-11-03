@@ -4,7 +4,8 @@ using UnityEngine;
 
 // TODO: - Implement crouching
 // - Implement cooldown between crouching/uncrouching
-// - Implement rotating over edge
+// - Implement rotating over edge (traversal time)
+
 [RequireComponent(typeof(Rigidbody))]
 [RequireComponent(typeof(Animator))]
 public class PlayerMovement : MonoBehaviour {
@@ -34,7 +35,7 @@ public class PlayerMovement : MonoBehaviour {
         if (Input.GetKey(KeyCode.LeftShift) && !crouched) {
             Crouch();
         }
-        else if (Input.GetKeyUp(KeyCode.LeftShift) && crouched) {
+        else if (!Input.GetKey(KeyCode.LeftShift) && crouched) {
             Uncrouch();
         }
         else if (Input.GetKeyDown(KeyCode.Space) && crouched) {
@@ -133,10 +134,10 @@ public class PlayerMovement : MonoBehaviour {
         Vector3 _crouchDir = Vector3.zero;
         Vector3 _offset = Vector3.zero;
         Vector3 _newCrouchDir = Vector3.zero;
-        bool _edgeSideRight;
-        bool _edgeClosed;
         Vector3 _newPoint = Vector3.zero;
         RaycastHit _hit;
+        bool _edgeSideRight;
+        bool _edgeClosed;
 
         if (crouchDirIndex >= 0) {
             _crouchDir = directions[crouchDirIndex];

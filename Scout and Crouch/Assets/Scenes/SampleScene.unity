@@ -1259,7 +1259,7 @@ MonoBehaviour:
     m_Bits: 256
   crouchMaxDistToObstacle: 0.5
   crouchDistToObstacle: 0.4
-  crouchDistToEdge: 0.4
+  crouchDistToEdge: 0.3
 --- !u!95 &1322736686
 Animator:
   serializedVersion: 3
