@@ -23,6 +23,7 @@ public class PlayerMovement : MonoBehaviour {
     bool crouched = false;
     int crouchDirIndex = -1;
     Vector3[] directions = new Vector3[] { Vector3.forward, Vector3.right, Vector3.back, Vector3.left };
+    float traverseEdgeMargin = 0.1f;
 
     private void Start() {
         rb = GetComponent<Rigidbody>();
@@ -35,6 +36,9 @@ public class PlayerMovement : MonoBehaviour {
         }
         else if (Input.GetKeyUp(KeyCode.LeftShift) && crouched) {
             Uncrouch();
+        }
+        else if (Input.GetKeyDown(KeyCode.Space) && crouched) {
+            TraverseEdge();
         }
     }
 
@@ -123,5 +127,63 @@ public class PlayerMovement : MonoBehaviour {
         if (_foundLeft && _foundRight) {
             rb.MovePosition(_newPos);
         }
+    }
+
+    private void TraverseEdge() {
+        Vector3 _crouchDir = Vector3.zero;
+        Vector3 _offset = Vector3.zero;
+        Vector3 _newCrouchDir = Vector3.zero;
+        bool _edgeSideRight;
+        bool _edgeClosed;
+        Vector3 _newPoint = Vector3.zero;
+        RaycastHit _hit;
+
+        if (crouchDirIndex >= 0) {
+            _crouchDir = directions[crouchDirIndex];
+            _offset= directions[(crouchDirIndex + 1) % directions.Length];
+        }
+        else {
+            return;
+        }
+
+        if (!Physics.Raycast(Math2D.V3AtHeight(transform.position + _offset * (crouchDistToEdge + traverseEdgeMargin), crouchHeight.Value), _crouchDir, crouchDistToObstacle + traverseEdgeMargin, obstacleMask)) {
+            _edgeSideRight = true;
+        }
+        else if (!Physics.Raycast(Math2D.V3AtHeight(transform.position - _offset * (crouchDistToEdge + traverseEdgeMargin), crouchHeight.Value), _crouchDir, crouchDistToObstacle + traverseEdgeMargin, obstacleMask)) {
+            _edgeSideRight = false;
+        }
+        else {
+            return;
+        }
+
+        if (_edgeSideRight) {
+            _edgeClosed = Physics.Raycast(Math2D.V3AtHeight(transform.position, crouchHeight.Value), _offset, out _hit, crouchDistToEdge + traverseEdgeMargin, obstacleMask);
+            if (_edgeClosed) {
+                _newPoint = _hit.point - _offset * crouchDistToObstacle + _crouchDir * (crouchDistToObstacle - 0.5f);
+                crouchDirIndex = (crouchDirIndex + 1) % directions.Length;
+            }
+            else {
+                Physics.Raycast(Math2D.V3AtHeight(transform.position + _crouchDir * (crouchDistToObstacle + 0.5f) + _offset * (crouchDistToEdge + traverseEdgeMargin), crouchHeight.Value), -_offset, out _hit, 2 * traverseEdgeMargin, obstacleMask);
+                _newPoint = _hit.point + _offset * crouchDistToObstacle;
+                crouchDirIndex = (crouchDirIndex + 3) % directions.Length;
+            }
+        }
+        else {
+            _edgeClosed = Physics.Raycast(Math2D.V3AtHeight(transform.position, crouchHeight.Value), -_offset, out _hit, crouchDistToEdge + traverseEdgeMargin, obstacleMask);
+            if (_edgeClosed) {
+                _newPoint = _hit.point + _offset * crouchDistToObstacle + _crouchDir * (crouchDistToObstacle - 0.5f);
+                crouchDirIndex = (crouchDirIndex + 3) % directions.Length;
+            }
+            else {
+                Physics.Raycast(Math2D.V3AtHeight(transform.position + _crouchDir * (crouchDistToObstacle + 0.5f) - _offset * (crouchDistToEdge + traverseEdgeMargin), crouchHeight.Value), _offset, out _hit, 2 * traverseEdgeMargin, obstacleMask);
+                _newPoint = _hit.point - _offset * crouchDistToObstacle;
+                crouchDirIndex = (crouchDirIndex + 1) % directions.Length;
+            }
+        }
+        
+        _newCrouchDir = directions[crouchDirIndex];
+
+        rb.MovePosition(Math2D.V3AtHeight(_newPoint, transform.position.y));
+        rb.MoveRotation(Quaternion.LookRotation(-_newCrouchDir, Vector3.up));
     }
 }
