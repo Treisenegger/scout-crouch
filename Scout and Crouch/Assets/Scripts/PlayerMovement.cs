@@ -25,6 +25,7 @@ public class PlayerMovement : MonoBehaviour {
     int crouchDirIndex = -1;
     Vector3[] directions = new Vector3[] { Vector3.forward, Vector3.right, Vector3.back, Vector3.left };
     float traverseEdgeMargin = 0.1f;
+    bool isMoving = true;
 
     private void Start() {
         rb = GetComponent<Rigidbody>();
@@ -32,6 +33,10 @@ public class PlayerMovement : MonoBehaviour {
     }
 
     private void Update() {
+        if (!isMoving) {
+            return;
+        }
+
         if (Input.GetKey(KeyCode.LeftShift) && !crouched) {
             Crouch();
         }
@@ -44,6 +49,10 @@ public class PlayerMovement : MonoBehaviour {
     }
 
     private void FixedUpdate() {
+        if (!isMoving) {
+            return;
+        }
+
         if (crouched) {
             MoveCrouched();
         }
@@ -184,7 +193,34 @@ public class PlayerMovement : MonoBehaviour {
         
         _newCrouchDir = directions[crouchDirIndex];
 
-        rb.MovePosition(Math2D.V3AtHeight(_newPoint, transform.position.y));
-        rb.MoveRotation(Quaternion.LookRotation(-_newCrouchDir, Vector3.up));
+        StartCoroutine(CrossEdge(Math2D.V3AtHeight(_newPoint, transform.position.y), _crouchDir, _newCrouchDir));
+    }
+
+    private IEnumerator CrossEdge(Vector3 _endPoint, Vector3 _crouchDir, Vector3 _newCrouchDir) {
+        isMoving = false;
+
+        Vector3 _crouchDirTranslation = Vector3.Dot(_crouchDir, _endPoint - rb.position) * _crouchDir;
+        Vector3 _perpDirTranslation = _endPoint - rb.position - _crouchDirTranslation;
+        Vector3 _firstDestination = rb.position + _perpDirTranslation;
+        Quaternion _newRotation = Quaternion.LookRotation(-_newCrouchDir, Vector3.up);
+
+        float _movementSpeed = 2f;
+        float _rotationSpeed = 180f;
+        float _interval = 0.05f;
+
+        while (rb.position != _firstDestination) {
+            yield return new WaitForSeconds(_interval);
+            rb.MovePosition(Vector3.MoveTowards(rb.position, _firstDestination, _interval * _movementSpeed));
+        }
+        while (rb.rotation != _newRotation) {
+            yield return new WaitForSeconds(_interval);
+            rb.MoveRotation(Quaternion.RotateTowards(rb.rotation, _newRotation, _interval * _rotationSpeed));
+        }
+        while (rb.position != _endPoint) {
+            yield return new WaitForSeconds(_interval);
+            rb.MovePosition(Vector3.MoveTowards(rb.position, _endPoint, _interval * _movementSpeed));
+        }
+
+        isMoving = true;
     }
 }
