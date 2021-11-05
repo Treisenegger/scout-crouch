@@ -4,7 +4,7 @@ using UnityEngine;
 
 // TODO: - Implement crouching
 // - Implement cooldown between crouching/uncrouching
-// - Implement rotating over edge (traversal time)
+// - Fix bug when obstacle is long
 
 [RequireComponent(typeof(Rigidbody))]
 [RequireComponent(typeof(Animator))]
@@ -21,6 +21,7 @@ public class PlayerMovement : MonoBehaviour {
     [SerializeField] float crouchDistToObstacle = 0.4f;
     [SerializeField] float crouchDistToEdge = 0.2f;
     [SerializeField] float edgeTraversalMargin = 0.1f;
+    [SerializeField] GameObject edgeIndicator;
 
     Vector3[] directions = new Vector3[] { Vector3.forward, Vector3.right, Vector3.back, Vector3.left };
     int crouchDirIndex = -1;
@@ -38,6 +39,7 @@ public class PlayerMovement : MonoBehaviour {
 
     private void Update() {
         if (inAnimation) {
+            ResetEdgeIndicator();
             return;
         }
 
@@ -45,6 +47,7 @@ public class PlayerMovement : MonoBehaviour {
             Crouch();
         }
         else if (!Input.GetKey(KeyCode.LeftShift) && crouched) {
+            ResetEdgeIndicator();
             Uncrouch();
         }
         else if (Input.GetKeyDown(KeyCode.Space) && crouched) {
@@ -60,6 +63,7 @@ public class PlayerMovement : MonoBehaviour {
         if (crouched) {
             MoveCrouched();
             DetectEdge();
+            DrawOverEdge();
         }
         else {
             Move();
@@ -78,7 +82,7 @@ public class PlayerMovement : MonoBehaviour {
             if (_angle < _minAngle) {
                 bool _foundRight = Physics.Raycast(Math2D.V3AtHeight(rb.position + _offset * crouchDistToEdge, crouchHeight.Value), _dir, crouchMaxDistToObstacle, obstacleMask);
                 bool _foundLeft = Physics.Raycast(Math2D.V3AtHeight(rb.position - _offset * crouchDistToEdge, crouchHeight.Value), _dir, crouchMaxDistToObstacle, obstacleMask);
-                
+
                 if (_foundRight && _foundLeft) {
                     Physics.Raycast(Math2D.V3AtHeight(rb.position, crouchHeight.Value), _dir, out _hit, crouchMaxDistToObstacle, obstacleMask);
                     _minAngle = _angle;
@@ -224,5 +228,19 @@ public class PlayerMovement : MonoBehaviour {
         }
 
         inAnimation = false;
+    }
+
+    private void DrawOverEdge() {
+        if (crouchDirIndexOverEdge < 0) {
+            ResetEdgeIndicator();
+        }
+        else {
+            edgeIndicator.SetActive(true);
+            edgeIndicator.transform.position = Math2D.V3AtHeight(pointOverEdge + directions[crouchDirIndexOverEdge] * crouchDistToObstacle, 0.01f);
+        }
+    }
+
+    private void ResetEdgeIndicator() {
+        edgeIndicator.SetActive(false);
     }
 }
