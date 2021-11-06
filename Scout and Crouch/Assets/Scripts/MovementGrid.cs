@@ -15,7 +15,7 @@ public class MovementGrid : MonoBehaviour {
     [Header("Grid Geometry Parameters")]
     [SerializeField] float width = 1f;
     [SerializeField] float height = 1f;
-    [SerializeField] float nodeWidth = 1f;
+    public float nodeWidth = 1f;
 
     [Header("Line of Sight Detection Parameters")]
     [SerializeField] FloatVariable crouchHeight;

@@ -1343,6 +1343,7 @@ MonoBehaviour:
   crouchDistToEdge: 0.3
   edgeTraversalMargin: 0.1
   edgeIndicator: {fileID: 1108014836}
+  movementGrid: {fileID: 1856860870}
 --- !u!95 &1322736686
 Animator:
   serializedVersion: 3

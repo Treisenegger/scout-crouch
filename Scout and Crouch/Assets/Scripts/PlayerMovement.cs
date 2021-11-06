@@ -22,6 +22,7 @@ public class PlayerMovement : MonoBehaviour {
     [SerializeField] float crouchDistToEdge = 0.2f;
     [SerializeField] float edgeTraversalMargin = 0.1f;
     [SerializeField] GameObject edgeIndicator;
+    [SerializeField] MovementGrid movementGrid;
 
     Vector3[] directions = new Vector3[] { Vector3.forward, Vector3.right, Vector3.back, Vector3.left };
     int crouchDirIndex = -1;
@@ -161,9 +162,7 @@ public class PlayerMovement : MonoBehaviour {
     private void DetectEdge() {
         Vector3 _crouchDir = Vector3.zero;
         Vector3 _perpendicularDir = Vector3.zero;
-        RaycastHit _hit;
-        bool _edgeSideRight;
-        bool _edgeClosed;
+        Node _currentNode = movementGrid.GetNodeFromWorldPos(transform.position);
 
         if (crouchDirIndex >= 0) {
             _crouchDir = directions[crouchDirIndex];
@@ -175,29 +174,47 @@ public class PlayerMovement : MonoBehaviour {
             return;
         }
 
-        if (!Physics.Raycast(Math2D.V3AtHeight(transform.position + _perpendicularDir * (crouchDistToEdge + edgeTraversalMargin), crouchHeight.Value), _crouchDir, crouchDistToObstacle + edgeTraversalMargin, obstacleMask)) {
-            _edgeSideRight = true;
+        Node _rightNode = movementGrid.GetNodeFromWorldPos(_currentNode.worldPos + _perpendicularDir);
+        Node _leftNode = movementGrid.GetNodeFromWorldPos(_currentNode.worldPos - _perpendicularDir);
+        Node _fwdRightNode = movementGrid.GetNodeFromWorldPos(_currentNode.worldPos + _perpendicularDir + _crouchDir);
+        Node _fwdLeftNode = movementGrid.GetNodeFromWorldPos(_currentNode.worldPos - _perpendicularDir + _crouchDir);
+
+        float _dstRight = Mathf.Abs(Vector3.Dot(transform.position - _rightNode.worldPos, _perpendicularDir));
+        float _dstLeft = Mathf.Abs(Vector3.Dot(transform.position - _leftNode.worldPos, _perpendicularDir));
+
+        if (_dstRight <= crouchDistToEdge + edgeTraversalMargin + movementGrid.nodeWidth / 2) {
+            if (_rightNode != _currentNode && Physics.Raycast(Math2D.V3AtHeight(_currentNode.worldPos, crouchHeight.Value), _perpendicularDir, movementGrid.nodeWidth, obstacleMask)) {
+                pointOverEdge = _currentNode.worldPos + (movementGrid.nodeWidth / 2 - crouchDistToObstacle) * _perpendicularDir;
+                crouchDirIndexOverEdge = (crouchDirIndex + 1) % directions.Length;
+            }
+            else if (_fwdRightNode != _currentNode && !Physics.Raycast(Math2D.V3AtHeight(_rightNode.worldPos, crouchHeight.Value), _crouchDir, movementGrid.nodeWidth, obstacleMask) &&
+                        Physics.Raycast(Math2D.V3AtHeight(_fwdRightNode.worldPos, crouchHeight.Value), -_perpendicularDir, movementGrid.nodeWidth, obstacleMask)) {
+                pointOverEdge = _fwdRightNode.worldPos + (movementGrid.nodeWidth / 2 - crouchDistToEdge) * (-_perpendicularDir);
+                crouchDirIndexOverEdge = (crouchDirIndex + 3) % directions.Length;
+            }
+            else {
+                pointOverEdge = Vector3.zero;
+                crouchDirIndexOverEdge = -1;
+            }
         }
-        else if (!Physics.Raycast(Math2D.V3AtHeight(transform.position - _perpendicularDir * (crouchDistToEdge + edgeTraversalMargin), crouchHeight.Value), _crouchDir, crouchDistToObstacle + edgeTraversalMargin, obstacleMask)) {
-            _edgeSideRight = false;
+        else if (_dstLeft <= crouchDistToEdge + edgeTraversalMargin + movementGrid.nodeWidth / 2) {
+            if (_leftNode != _currentNode && Physics.Raycast(Math2D.V3AtHeight(_currentNode.worldPos, crouchHeight.Value), -_perpendicularDir, movementGrid.nodeWidth, obstacleMask)) {
+                pointOverEdge = _currentNode.worldPos + (movementGrid.nodeWidth / 2 - crouchDistToObstacle) * (-_perpendicularDir);
+                crouchDirIndexOverEdge = (crouchDirIndex + 3) % directions.Length;
+            }
+            else if (_fwdLeftNode != _currentNode && !Physics.Raycast(Math2D.V3AtHeight(_leftNode.worldPos, crouchHeight.Value), _crouchDir, movementGrid.nodeWidth, obstacleMask) &&
+                        Physics.Raycast(Math2D.V3AtHeight(_fwdLeftNode.worldPos, crouchHeight.Value), _perpendicularDir, movementGrid.nodeWidth, obstacleMask)) {
+                pointOverEdge = _fwdLeftNode.worldPos + (movementGrid.nodeWidth / 2 - crouchDistToEdge) * _perpendicularDir;
+                crouchDirIndexOverEdge = (crouchDirIndex + 1) % directions.Length;
+            }
+            else {
+                pointOverEdge = Vector3.zero;
+                crouchDirIndexOverEdge = -1;
+            }
         }
         else {
-            crouchDirIndexOverEdge = -1;
             pointOverEdge = Vector3.zero;
-            return;
-        }
-
-        _perpendicularDir = _edgeSideRight ? _perpendicularDir : -_perpendicularDir;
-        _edgeClosed = Physics.Raycast(Math2D.V3AtHeight(transform.position, crouchHeight.Value), _perpendicularDir, out _hit, crouchDistToEdge + edgeTraversalMargin, obstacleMask);
-
-        if (_edgeClosed) {
-            pointOverEdge = _hit.point - _perpendicularDir * crouchDistToObstacle + _crouchDir * (crouchDistToObstacle - 0.5f);
-            crouchDirIndexOverEdge = _edgeSideRight ? (crouchDirIndex + 1) % directions.Length : (crouchDirIndex + 3) % directions.Length;
-        }
-        else {
-            Physics.Raycast(Math2D.V3AtHeight(transform.position + _crouchDir * (crouchDistToObstacle + 0.5f) + _perpendicularDir * (crouchDistToEdge + edgeTraversalMargin), crouchHeight.Value), -_perpendicularDir, out _hit, 2 * edgeTraversalMargin, obstacleMask);
-            pointOverEdge = _hit.point + _perpendicularDir * crouchDistToObstacle;
-            crouchDirIndexOverEdge = _edgeSideRight ? (crouchDirIndex + 3) % directions.Length : (crouchDirIndex + 1) % directions.Length;
+            crouchDirIndexOverEdge = -1;
         }
     }
 
