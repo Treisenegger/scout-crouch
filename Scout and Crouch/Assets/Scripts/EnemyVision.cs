@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System;
 using UnityEngine;
 
 [RequireComponent(typeof(EnemyController))]
@@ -15,7 +16,7 @@ public class EnemyVision : MonoBehaviour {
     [SerializeField] LayerMask obstacleMask;
 
     [Header("Vision Cone Detection Parameters")]
-    [SerializeField] float targetDetectionFreq = 0.2f;
+    [SerializeField] float targetDetectionFreq = 30f;
     [SerializeField] FloatVariable crouchHeight;
     [SerializeField] FloatVariable uprightHeight;
 
@@ -37,20 +38,44 @@ public class EnemyVision : MonoBehaviour {
     MeshRenderer crouchMeshRenderer;
     MeshRenderer uprightMeshRenderer;
 
+    struct ViewCastInfo {
+        public bool hit;
+        public Vector3 point;
+        public float distance;
+        public float angle;
+
+        public ViewCastInfo(bool _hit, Vector3 _point, float _distance, float _angle) {
+            hit = _hit;
+            point = _point;
+            distance = _distance;
+            angle = _angle;
+        }
+    }
+
+    struct PointPair {
+        public Vector3 pointA;
+        public Vector3 pointB;
+
+        public PointPair(Vector3 _pointA, Vector3 _pointB) {
+            pointA = _pointA;
+            pointB = _pointB;
+        }
+    }
+
     private void Start() {
         ec = GetComponent<EnemyController>();
 
         crouchConeMesh = new Mesh();
-        crouchConeMesh.name = "Vision Cone Mesh";
+        crouchConeMesh.name = "Crouch Vision Cone Mesh";
         crouchMeshFilter.mesh = crouchConeMesh;
         crouchMeshRenderer = crouchMeshFilter.GetComponent<MeshRenderer>();
 
         uprightConeMesh = new Mesh();
-        uprightConeMesh.name = "Vision Cone Mesh";
+        uprightConeMesh.name = "Upright Vision Cone Mesh";
         uprightMeshFilter.mesh = uprightConeMesh;
         uprightMeshRenderer = uprightMeshFilter.GetComponent<MeshRenderer>();
 
-        StartCoroutine(InitiatePlayerDetection());
+        StartCoroutine(InitiatePeriodicAction(DetectTargets, targetDetectionFreq));
     }
 
     private void LateUpdate() {
@@ -66,10 +91,10 @@ public class EnemyVision : MonoBehaviour {
         return new Vector3(Mathf.Sin(_angleInRad), 0f, Mathf.Cos(_angleInRad));
     }
 
-    private IEnumerator InitiatePlayerDetection() {
+    private IEnumerator InitiatePeriodicAction(Action _action, float _freq) {
         while (true) {
-            DetectTargets();
-            yield return new WaitForSecondsRealtime(targetDetectionFreq);
+            _action();
+            yield return new WaitForSeconds(1 / _freq);
         }
     }
 
@@ -77,8 +102,7 @@ public class EnemyVision : MonoBehaviour {
         // Determine if a player is in radius
         Collider[] _detectedPlayers = Physics.OverlapSphere(transform.position, visionRange, playerMask);
         if (_detectedPlayers.Length == 0) {
-            ec.TargetDetected(false, Vector3.zero);
-            SetAlerted(false);
+            SetAlerted(false, Vector3.zero);
             return;
         }
 
@@ -87,36 +111,31 @@ public class EnemyVision : MonoBehaviour {
         Vector3 _directionToPlayer = Math2D.V3ToV3Dir(transform.position, _player.transform.position);
         float _angleToPlayer = Mathf.Abs(Vector3.Angle(transform.forward, _directionToPlayer));
         if (_angleToPlayer > visionAngle / 2) {
-            ec.TargetDetected(false, Vector3.zero);
-            SetAlerted(false);
+            SetAlerted(false, Vector3.zero);
             return;
         }
 
         // Determine if player is occluded
         float _distanceToPlayer = Math2D.V3ToV3Dist(transform.position, _player.transform.position);
-        bool _occluded = Physics.Raycast(Math2D.V3AtHeight(transform.position, crouchHeight.Value), _directionToPlayer, _distanceToPlayer, obstacleMask);
+        bool _occluded = Physics.Raycast(Math2D.V3AtHeight(transform.position, crouchHeight.Value), _directionToPlayer, _distanceToPlayer, obstacleMask) &&
+                (Physics.Raycast(Math2D.V3AtHeight(transform.position, uprightHeight.Value), _directionToPlayer, _distanceToPlayer, obstacleMask) ||
+                !Physics.Raycast(Math2D.V3AtHeight(transform.position, uprightHeight.Value), _directionToPlayer, _distanceToPlayer, playerMask));
 
         if (_occluded) {
-            _occluded = Physics.Raycast(Math2D.V3AtHeight(transform.position, uprightHeight.Value), _directionToPlayer, _distanceToPlayer, obstacleMask);
-            if (!_occluded) {
-                _occluded = !Physics.Raycast(Math2D.V3AtHeight(transform.position, uprightHeight.Value), _directionToPlayer, _distanceToPlayer, playerMask);
-            }
+            SetAlerted(false, Vector3.zero);
+            return;
         }
 
-        if (_occluded) {
-            ec.TargetDetected(false, Vector3.zero);
-            SetAlerted(false);
-        }
-        else {
-            ec.TargetDetected(true, _player.transform.position);
-            SetAlerted(true);
-        }
+        SetAlerted(true, _player.transform.position);
     }
 
-    private void SetAlerted(bool _isAlerted) {
+    private void SetAlerted(bool _isAlerted, Vector3 _position) {
+        Color _coneColor = _isAlerted ? alertedColor : defaultColor;
+
         isAlerted = _isAlerted;
-        crouchMeshRenderer.material.SetColor("_Color", isAlerted ? alertedColor : defaultColor);
-        uprightMeshRenderer.material.SetColor("_Color", isAlerted ? alertedColor : defaultColor);
+        crouchMeshRenderer.material.SetColor("_Color", _coneColor);
+        uprightMeshRenderer.material.SetColor("_Color", _coneColor);
+        ec.TargetDetected(_isAlerted, _position);
     }
 
     private void DrawVisionCone(Mesh _coneMesh, float _height) {
@@ -181,16 +200,6 @@ public class EnemyVision : MonoBehaviour {
         return new PointPair(_vcMin.point, _vcMax.point);
     }
 
-    struct PointPair {
-        public Vector3 pointA;
-        public Vector3 pointB;
-
-        public PointPair(Vector3 _pointA, Vector3 _pointB) {
-            pointA = _pointA;
-            pointB = _pointB;
-        }
-    }
-
     private ViewCastInfo ViewCast(float _globalAngle, float _height) {
         Vector3 _dir = DirFromAngle(_globalAngle, true);
         RaycastHit _hit;
@@ -201,20 +210,6 @@ public class EnemyVision : MonoBehaviour {
         }
         else {
             return new ViewCastInfo(false, transform.position + _dir * visionRange, visionRange, _globalAngle);
-        }
-    }
-
-    struct ViewCastInfo {
-        public bool hit;
-        public Vector3 point;
-        public float distance;
-        public float angle;
-
-        public ViewCastInfo(bool _hit, Vector3 _point, float _distance, float _angle) {
-            hit = _hit;
-            point = _point;
-            distance = _distance;
-            angle = _angle;
         }
     }
 }

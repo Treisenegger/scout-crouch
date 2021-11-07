@@ -265,6 +265,6 @@ public class EnemyController : MonoBehaviour {
             Gizmos.DrawSphere(_sphereCenter, 0.1f);
         }
 
-        Gizmos.DrawWireSphere(Math2D.V3AtZero(transform.position), maxAlertedPathLength);
+        // Gizmos.DrawWireSphere(Math2D.V3AtZero(transform.position), maxAlertedPathLength);
     }
 }

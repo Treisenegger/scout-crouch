@@ -1665,7 +1665,7 @@ MonoBehaviour:
   movementSpeed: 1.5
   rotationSpeed: 180
   investigationTurnDuration: 1.5
-  turnUpdateFreq: 0.03
+  turnUpdateFreq: 0.02
   movementGrid: {fileID: 1856860870}
   minDistToTarget: 1
   maxAlertedPathLength: 6
@@ -1693,7 +1693,7 @@ MonoBehaviour:
   obstacleMask:
     serializedVersion: 2
     m_Bits: 256
-  targetDetectionFreq: 0.02
+  targetDetectionFreq: 30
   crouchHeight: {fileID: 11400000, guid: 9c561fa395f6de9479d6c4546c2ede98, type: 2}
   uprightHeight: {fileID: 11400000, guid: 26b9042aca20f6c4e9dfc673d030945e, type: 2}
   visionResolution: 0.5
