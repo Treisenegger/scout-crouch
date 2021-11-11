@@ -38,7 +38,7 @@ public class EnemyVision : MonoBehaviour {
     MeshRenderer crouchMeshRenderer;
     MeshRenderer uprightMeshRenderer;
 
-    struct ViewCastInfo {
+    private struct ViewCastInfo {
         public bool hit;
         public Vector3 point;
         public float distance;
@@ -52,7 +52,7 @@ public class EnemyVision : MonoBehaviour {
         }
     }
 
-    struct PointPair {
+    private struct PointPair {
         public Vector3 pointA;
         public Vector3 pointB;
 
@@ -62,7 +62,7 @@ public class EnemyVision : MonoBehaviour {
         }
     }
 
-    struct MeshInfo {
+    private struct MeshInfo {
         public Vector3[] vertices;
         public int[] triangles;
 

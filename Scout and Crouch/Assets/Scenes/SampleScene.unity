@@ -1665,14 +1665,17 @@ MonoBehaviour:
   movementSpeed: 1.5
   rotationSpeed: 180
   investigationTurnDuration: 1.5
-  turnUpdateFreq: 0.02
+  turnUpdateFreq: 30
   movementGrid: {fileID: 1856860870}
   minDistToTarget: 1
   maxAlertedPathLength: 6
   maxDistToEnd: 0.1
-  globalPath:
-  - {x: -0.5, y: -4.5}
-  targetAngle: 0
+  globalWaypoints:
+  - position: {x: 6.5, y: -0.5}
+    rotation: 180
+  - position: {x: -5.5, y: 4.5}
+    rotation: 0
+  waitTime: 2
 --- !u!114 &1523417765
 MonoBehaviour:
   m_ObjectHideFlags: 0

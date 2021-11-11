@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System;
 
 // TODO: - Implement wait time on global waypoints and target rotation
 
@@ -15,7 +16,7 @@ public class EnemyController : MonoBehaviour {
     [SerializeField] float movementSpeed = 3f;
     [SerializeField] float rotationSpeed = 180f;
     [SerializeField] float investigationTurnDuration = 2f;
-    [SerializeField] float turnUpdateFreq = 0.05f;
+    [SerializeField] float turnUpdateFreq = 30f;
 
     [Header("Pathfinding Parameters")]
     [SerializeField] MovementGrid movementGrid;
@@ -24,39 +25,39 @@ public class EnemyController : MonoBehaviour {
     [SerializeField] float maxDistToEnd = 0.1f;
 
     [Header("Path Parameters")]
-    [SerializeField] Vector2[] globalPath;
-    [Tooltip("Angle to point towards when reaching global path point in single waypoint global path")]
-    [SerializeField] float targetAngle;
+    [SerializeField] Waypoint[] globalWaypoints;
+    [SerializeField] float waitTime = 1f;
 
     Rigidbody rb;
     EnemyVision ev;
     Vector2[] currentPath;
     int currentPathIndex = 0;
-    int globalPathIndex = 0;
+    int globalWaypointsIndex = 0;
     Vector3 currentDestination;
     bool isMoving = true;
     Status status = Status.Normal;
     Vector3 lastTargetLocation;
+    IEnumerator waitCoroutine;
 
-    private bool followingGlobalPath {
+    private bool FollowingGlobalPath {
         get {
             return status == Status.Normal;
         }
     }
 
-    private bool investigating {
+    private bool Investigating {
         get {
             return status == Status.Investigating;
         }
     }
 
-    private bool alerted {
+    private bool Alerted {
         get {
             return status == Status.Alerted;
         }
     }
 
-    private Vector2 currentPathEndPosition {
+    private Vector2 CurrentPathEndPosition {
         get {
             return currentPath.Length > 0 ? currentPath[currentPath.Length - 1] : Vector2.zero;
         }
@@ -66,6 +67,18 @@ public class EnemyController : MonoBehaviour {
         Normal,
         Alerted,
         Investigating
+    }
+
+    [Serializable]
+    private struct Waypoint {
+        public Vector2 position;
+        [Range(0, 360)]
+        public float rotation;
+
+        public Waypoint(Vector2 _position, float _rotation) {
+            position = _position;
+            rotation = _rotation;
+        }
     }
 
     private void Start() {
@@ -80,20 +93,17 @@ public class EnemyController : MonoBehaviour {
     private void FixedUpdate() {
         bool _atDestination = rb.position == currentDestination;
         bool _atEndOfPath = currentPathIndex == currentPath.Length - 1;
-        bool _hasOneWayPoint = globalPath.Length == 1;
+        bool _hasOneWayPoint = globalWaypoints.Length == 1;
 
         if (isMoving && _atDestination) {
             if (_atEndOfPath) {
-                if (followingGlobalPath) {
-                    if (_hasOneWayPoint) {
-                        isMoving = false;
-                    }
-                    else {
-                        AdvanceGlobalPath();
-                        SetPathToGlobalWaypoint();
+                if (FollowingGlobalPath) {
+                    isMoving = false;
+                    if (!_hasOneWayPoint) {
+                        StartWaitCoroutine();
                     }
                 }
-                else if (investigating) {
+                else if (Investigating) {
                     StartInvestigativeTurn();
                     status = Status.Normal;
                     SetPathToGlobalWaypoint();
@@ -104,7 +114,7 @@ public class EnemyController : MonoBehaviour {
                 UpdateDestination();
             }
         }
-        else if (isMoving && _atEndOfPath && investigating && Math2D.V3ToV3Dist(transform.position, currentDestination) < maxDistToEnd) {
+        else if (isMoving && _atEndOfPath && Investigating && Math2D.V3ToV3Dist(transform.position, currentDestination) < maxDistToEnd) {
             StartInvestigativeTurn();
             status = Status.Normal;
             SetPathToGlobalWaypoint();
@@ -114,9 +124,9 @@ public class EnemyController : MonoBehaviour {
             Move();
         }
 
-        if (followingGlobalPath) {
-            if (!isMoving && _atDestination && _hasOneWayPoint) {
-                RotateTowardsAngle(targetAngle);
+        if (FollowingGlobalPath) {
+            if (!isMoving && _atDestination) {
+                RotateTowardsAngle(globalWaypoints[globalWaypointsIndex].rotation);
             }
             else if (isMoving && !_atDestination) {
                 RotateWithMovement();
@@ -127,9 +137,21 @@ public class EnemyController : MonoBehaviour {
         }
     }
 
+    private void StartWaitCoroutine() {
+        waitCoroutine = WaitOnWaypoint();
+        StartCoroutine(waitCoroutine);
+    }
+
+    private IEnumerator WaitOnWaypoint() {
+        yield return new WaitForSeconds(waitTime);
+        isMoving = true;
+        AdvanceGlobalPath();
+        SetPathToGlobalWaypoint();
+    }
+
     // Increment index of the global path
     private void AdvanceGlobalPath() {
-        globalPathIndex = (globalPathIndex + 1) % globalPath.Length;
+        globalWaypointsIndex = (globalWaypointsIndex + 1) % globalWaypoints.Length;
     }
 
     // Increment index of the current local path
@@ -139,7 +161,7 @@ public class EnemyController : MonoBehaviour {
 
     // Set new local path towards next waypoint in global path
     private void SetPathToGlobalWaypoint() {
-        SetNewPath(globalPath[globalPathIndex]);
+        SetNewPath(globalWaypoints[globalWaypointsIndex].position);
     }
 
     // Set new local path
@@ -167,7 +189,7 @@ public class EnemyController : MonoBehaviour {
 
     // Move the enemy towards its next destination in the local path
     private void Move() {
-        if (alerted && Math2D.V3ToV3Dist(transform.position, lastTargetLocation) < minDistToTarget) {
+        if (Alerted && Math2D.V3ToV3Dist(transform.position, lastTargetLocation) < minDistToTarget) {
             isMoving = false;
             return;
         }
@@ -183,26 +205,20 @@ public class EnemyController : MonoBehaviour {
         if (rb.position == currentDestination) {
             return;
         }
-
-        Quaternion _from = rb.rotation;
         Quaternion _to = Quaternion.LookRotation((currentDestination - rb.position).normalized, Vector3.up);
-
-        if (_to == _from) {
-            return;
-        }
-
-        float _maxAngle = rotationSpeed * Time.fixedDeltaTime;
-        rb.MoveRotation(Quaternion.RotateTowards(_from, _to, _maxAngle));
+        RotateSlowly(_to);
     }
 
     private void RotateTowardsAngle(float _angle) {
-        Quaternion _from = rb.rotation;
         Quaternion _to = Quaternion.Euler(0f, _angle, 0f);
+        RotateSlowly(_to);
+    }
 
+    private void RotateSlowly(Quaternion _to) {
+        Quaternion _from = rb.rotation;
         if (_to == _from) {
             return;
         }
-
         float _maxAngle = rotationSpeed * Time.fixedDeltaTime;
         rb.MoveRotation(Quaternion.RotateTowards(_from, _to, _maxAngle));
     }
@@ -215,10 +231,14 @@ public class EnemyController : MonoBehaviour {
     // Method called when target is detected by EnemyVision component to set the status field and the last player position
     public void TargetDetected(bool _detected, Vector3 _targetLocation) {
         if (_detected) {
-            Node _prevTargetNode = movementGrid.GetNodeFromWorldPos(Math2D.V2ToV3AtZero(currentPathEndPosition));
+            if (waitCoroutine != null) {
+                StopCoroutine(waitCoroutine);
+            }
+
+            Node _prevTargetNode = movementGrid.GetNodeFromWorldPos(Math2D.V2ToV3AtZero(CurrentPathEndPosition));
             Node _newTargetNode = movementGrid.GetNodeFromWorldPos(_targetLocation);
 
-            if (!alerted || (isMoving && _prevTargetNode != _newTargetNode)) {
+            if (!Alerted || (isMoving && _prevTargetNode != _newTargetNode)) {
                 isMoving = true;
                 SetNewPath(Math2D.V3ToV2(_targetLocation), true);
             }
@@ -226,12 +246,12 @@ public class EnemyController : MonoBehaviour {
             lastTargetLocation = _targetLocation;
             status = Status.Alerted;
         }
-        else if (alerted) {
+        else if (Alerted) {
             isMoving = true;
             SetNewPath(Math2D.V3ToV2(lastTargetLocation));
             status = Status.Investigating;
         }
-        else if (investigating) {
+        else if (Investigating) {
             status = Status.Investigating;
         }
         else {
@@ -248,9 +268,9 @@ public class EnemyController : MonoBehaviour {
         float _turnSpeed = 360 / _duration;
         float _angleTurned = 0f;
         isMoving = false;
-        while (_angleTurned < 360f) {
-            yield return new WaitForSeconds(_updateFreq);
-            float _turnAngle = _updateFreq * _turnSpeed;
+        while (_angleTurned < 360f && !isMoving) {
+            yield return new WaitForSeconds(1 / _updateFreq);
+            float _turnAngle = _turnSpeed / _updateFreq;
             rb.MoveRotation(rb.rotation * Quaternion.Euler(0f, _turnAngle, 0f));
             _angleTurned += _turnAngle;
         }
@@ -259,10 +279,11 @@ public class EnemyController : MonoBehaviour {
 
     // Draw global path's waypoints for easier path definition
     private void OnDrawGizmos() {
-        foreach (Vector2 _point in globalPath) {
-            Vector3 _sphereCenter = Math2D.V2ToV3AtZero(_point);
-            Gizmos.color = Color.cyan;
+        foreach (Waypoint _waypoint in globalWaypoints) {
+            Vector3 _sphereCenter = Math2D.V2ToV3AtZero(_waypoint.position);
+            Gizmos.color = Color.white;
             Gizmos.DrawSphere(_sphereCenter, 0.1f);
+            Gizmos.DrawRay(_sphereCenter, Quaternion.Euler(0f, _waypoint.rotation, 0f) * Vector3.forward * 0.5f);
         }
 
         // Gizmos.DrawWireSphere(Math2D.V3AtZero(transform.position), maxAlertedPathLength);
