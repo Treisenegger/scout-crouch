@@ -62,33 +62,33 @@ public class EnemyVision : MonoBehaviour {
         }
     }
 
+    struct MeshInfo {
+        public Vector3[] vertices;
+        public int[] triangles;
+
+        public MeshInfo(Vector3[] _vertices, int[] _triangles) {
+            vertices = _vertices;
+            triangles = _triangles;
+        }
+    }
+
     private void Start() {
         ec = GetComponent<EnemyController>();
-
-        crouchConeMesh = new Mesh();
-        crouchConeMesh.name = "Crouch Vision Cone Mesh";
-        crouchMeshFilter.mesh = crouchConeMesh;
-        crouchMeshRenderer = crouchMeshFilter.GetComponent<MeshRenderer>();
-
-        uprightConeMesh = new Mesh();
-        uprightConeMesh.name = "Upright Vision Cone Mesh";
-        uprightMeshFilter.mesh = uprightConeMesh;
-        uprightMeshRenderer = uprightMeshFilter.GetComponent<MeshRenderer>();
-
+        SetupConeMesh(ref crouchConeMesh, ref crouchMeshRenderer, crouchMeshFilter, "Crouch Vision Cone Mesh");
+        SetupConeMesh(ref uprightConeMesh, ref uprightMeshRenderer, uprightMeshFilter, "Upright Vision Cone Mesh");
         StartCoroutine(InitiatePeriodicAction(DetectTargets, targetDetectionFreq));
     }
 
     private void LateUpdate() {
-        DrawVisionCone(crouchConeMesh, crouchHeight.Value);
-        DrawVisionCone(uprightConeMesh, uprightHeight.Value);
+        DrawVisionCone(crouchConeMesh, crouchHeight.Value, crouchConeBase);
+        DrawVisionCone(uprightConeMesh, uprightHeight.Value, uprightConeBase);
     }
 
-    public Vector3 DirFromAngle(float _angleInDegrees, bool _angleIsGlobal) {
-        if (!_angleIsGlobal) {
-            _angleInDegrees += transform.eulerAngles.y;
-        }
-        float _angleInRad = _angleInDegrees * Mathf.Deg2Rad;
-        return new Vector3(Mathf.Sin(_angleInRad), 0f, Mathf.Cos(_angleInRad));
+    private void SetupConeMesh(ref Mesh _coneMesh, ref MeshRenderer _coneMeshRenderer, MeshFilter _coneMeshFilter, string _name) {
+        _coneMesh = new Mesh();
+        _coneMesh.name = _name;
+        _coneMeshFilter.mesh = _coneMesh;
+        _coneMeshRenderer = _coneMeshFilter.GetComponent<MeshRenderer>();
     }
 
     private IEnumerator InitiatePeriodicAction(Action _action, float _freq) {
@@ -102,7 +102,7 @@ public class EnemyVision : MonoBehaviour {
         // Determine if a player is in radius
         Collider[] _detectedPlayers = Physics.OverlapSphere(transform.position, visionRange, playerMask);
         if (_detectedPlayers.Length == 0) {
-            SetAlerted(false, Vector3.zero);
+            SetAlerted(false);
             return;
         }
 
@@ -111,22 +111,26 @@ public class EnemyVision : MonoBehaviour {
         Vector3 _directionToPlayer = Math2D.V3ToV3Dir(transform.position, _player.transform.position);
         float _angleToPlayer = Mathf.Abs(Vector3.Angle(transform.forward, _directionToPlayer));
         if (_angleToPlayer > visionAngle / 2) {
-            SetAlerted(false, Vector3.zero);
+            SetAlerted(false);
             return;
         }
 
         // Determine if player is occluded
         float _distanceToPlayer = Math2D.V3ToV3Dist(transform.position, _player.transform.position);
-        bool _occluded = Physics.Raycast(Math2D.V3AtHeight(transform.position, crouchHeight.Value), _directionToPlayer, _distanceToPlayer, obstacleMask) &&
-                (Physics.Raycast(Math2D.V3AtHeight(transform.position, uprightHeight.Value), _directionToPlayer, _distanceToPlayer, obstacleMask) ||
-                !Physics.Raycast(Math2D.V3AtHeight(transform.position, uprightHeight.Value), _directionToPlayer, _distanceToPlayer, playerMask));
+        bool _occluded = RaycastAtHeight(crouchHeight.Value, _directionToPlayer, _distanceToPlayer, obstacleMask) &&
+                (RaycastAtHeight(uprightHeight.Value, _directionToPlayer, _distanceToPlayer, obstacleMask) ||
+                !RaycastAtHeight(uprightHeight.Value, _directionToPlayer, _distanceToPlayer, playerMask));
 
         if (_occluded) {
-            SetAlerted(false, Vector3.zero);
+            SetAlerted(false);
             return;
         }
 
         SetAlerted(true, _player.transform.position);
+    }
+
+    private void SetAlerted(bool _isAlerted) {
+        SetAlerted(_isAlerted, Vector3.zero);
     }
 
     private void SetAlerted(bool _isAlerted, Vector3 _position) {
@@ -138,7 +142,11 @@ public class EnemyVision : MonoBehaviour {
         ec.TargetDetected(_isAlerted, _position);
     }
 
-    private void DrawVisionCone(Mesh _coneMesh, float _height) {
+    private bool RaycastAtHeight(float _height, Vector3 _dir, float _dist, LayerMask _layerMask) {
+        return Physics.Raycast(Math2D.V3AtHeight(transform.position, _height), _dir, _dist, _layerMask);
+    }
+
+    private void DrawVisionCone(Mesh _coneMesh, float _height, Transform _coneBase) {
         int _stepCount = Mathf.RoundToInt(visionAngle * visionResolution);
         float _stepAngleSize = visionAngle / _stepCount;
         ViewCastInfo _oldViewCast = new ViewCastInfo();
@@ -161,25 +169,8 @@ public class EnemyVision : MonoBehaviour {
             _oldViewCast = _newViewCast;
         }
 
-        int _vertexCount = _viewPoints.Count + 1;
-        Vector3[] _vertices = new Vector3[_vertexCount];
-        int[] _triangles = new int[(_vertexCount - 2) * 3];
-        _vertices[0] = crouchConeBase.localPosition;
-
-        for (int i = 0; i < _vertexCount - 1; i++) {
-            _vertices[i + 1] = transform.InverseTransformPoint(_viewPoints[i]) + crouchConeBase.localPosition;
-
-            if (i < _vertexCount - 2) {
-                _triangles[3*i] = 0;
-                _triangles[3*i + 1] = i + 1;
-                _triangles[3*i + 2] = i + 2;
-            }
-        }
-
-        _coneMesh.Clear();
-        _coneMesh.vertices = _vertices;
-        _coneMesh.triangles = _triangles;
-        _coneMesh.RecalculateNormals();
+        MeshInfo _meshInfo = GenerateMeshInfo(_viewPoints, _coneBase);
+        UpdateConeMesh(_coneMesh, _meshInfo);
     }
 
     private PointPair FindEdge(ViewCastInfo _vcInfoA, ViewCastInfo _vcInfoB, float _height) {
@@ -211,5 +202,40 @@ public class EnemyVision : MonoBehaviour {
         else {
             return new ViewCastInfo(false, transform.position + _dir * visionRange, visionRange, _globalAngle);
         }
+    }
+
+    private MeshInfo GenerateMeshInfo(List<Vector3> _viewPoints, Transform _coneBase) {
+        int _vertexCount = _viewPoints.Count + 1;
+        Vector3[] _vertices = new Vector3[_vertexCount];
+        int[] _triangles = new int[(_vertexCount - 2) * 3];
+        _vertices[0] = _coneBase.localPosition;
+
+        for (int i = 0; i < _vertexCount - 1; i++) {
+            _vertices[i + 1] = transform.InverseTransformPoint(_viewPoints[i]) + _coneBase.localPosition;
+
+            if (i < _vertexCount - 2) {
+                _triangles[3*i] = 0;
+                _triangles[3*i + 1] = i + 1;
+                _triangles[3*i + 2] = i + 2;
+            }
+        }
+
+        return new MeshInfo(_vertices, _triangles);
+    }
+
+    private void UpdateConeMesh(Mesh _coneMesh, MeshInfo _meshInfo) {
+        _coneMesh.Clear();
+        _coneMesh.vertices = _meshInfo.vertices;
+        _coneMesh.triangles = _meshInfo.triangles;
+        _coneMesh.RecalculateNormals();
+    }
+
+    public Vector3 DirFromAngle(float _angleInDegrees, bool _angleIsGlobal) {
+        if (!_angleIsGlobal) {
+            _angleInDegrees += transform.eulerAngles.y;
+        }
+
+        float _angleInRad = _angleInDegrees * Mathf.Deg2Rad;
+        return new Vector3(Mathf.Sin(_angleInRad), 0f, Mathf.Cos(_angleInRad));
     }
 }
