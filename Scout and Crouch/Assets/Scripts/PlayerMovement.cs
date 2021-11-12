@@ -229,19 +229,19 @@ public class PlayerMovement : MonoBehaviour {
 
         float _movementSpeed = 2f;
         float _rotationSpeed = 180f;
-        float _interval = 0.05f;
+        float _frequency = 30f;
 
         while (rb.position != _firstDestination) {
-            yield return new WaitForSeconds(_interval);
-            rb.MovePosition(Vector3.MoveTowards(rb.position, _firstDestination, _interval * _movementSpeed));
+            yield return new WaitForSeconds(1 / _frequency);
+            rb.MovePosition(Vector3.MoveTowards(rb.position, _firstDestination, _movementSpeed / _frequency));
         }
         while (rb.rotation != _newRotation) {
-            yield return new WaitForSeconds(_interval);
-            rb.MoveRotation(Quaternion.RotateTowards(rb.rotation, _newRotation, _interval * _rotationSpeed));
+            yield return new WaitForSeconds(1 / _frequency);
+            rb.MoveRotation(Quaternion.RotateTowards(rb.rotation, _newRotation, _rotationSpeed / _frequency));
         }
         while (rb.position != _endPoint) {
-            yield return new WaitForSeconds(_interval);
-            rb.MovePosition(Vector3.MoveTowards(rb.position, _endPoint, _interval * _movementSpeed));
+            yield return new WaitForSeconds(1 / _frequency);
+            rb.MovePosition(Vector3.MoveTowards(rb.position, _endPoint, _movementSpeed / _frequency));
         }
 
         inAnimation = false;

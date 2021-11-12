@@ -8,7 +8,7 @@ using System;
 [RequireComponent(typeof(Rigidbody))]
 [RequireComponent(typeof(EnemyVision))]
 public class EnemyController : MonoBehaviour {
-
+    [Header("Collider Parameters")]
     [SerializeField] CapsuleCollider parentCollider;
     [SerializeField] CapsuleCollider childCollider;
 
@@ -19,24 +19,25 @@ public class EnemyController : MonoBehaviour {
     [SerializeField] float turnUpdateFreq = 30f;
 
     [Header("Pathfinding Parameters")]
-    [SerializeField] MovementGrid movementGrid;
     [SerializeField] float minDistToTarget = 0.7f;
     [SerializeField] float maxAlertedPathLength = 7f;
     [SerializeField] float maxDistToEnd = 0.1f;
+    [SerializeField] MovementGrid movementGrid;
 
     [Header("Path Parameters")]
-    [SerializeField] Waypoint[] globalWaypoints;
     [SerializeField] float waitTime = 1f;
+    [SerializeField] Waypoint[] globalWaypoints;
 
     Rigidbody rb;
     EnemyVision ev;
-    Vector2[] currentPath;
+    bool isMoving = true;
     int currentPathIndex = 0;
     int globalWaypointsIndex = 0;
     Vector3 currentDestination;
-    bool isMoving = true;
-    Status status = Status.Normal;
     Vector3 lastTargetLocation;
+    Vector2[] currentPath;
+    Status status = Status.Normal;
+    Dictionary<Status, StatusActions> statusActionsDictionary;
     IEnumerator waitCoroutine;
 
     private bool FollowingGlobalPath {
@@ -69,6 +70,18 @@ public class EnemyController : MonoBehaviour {
         Investigating
     }
 
+    private struct StatusActions {
+        public Action pathUpdate;
+        public Action move;
+        public Action rotate;
+
+        public StatusActions(Action _pathUpdate, Action _move, Action _rotate) {
+            pathUpdate = _pathUpdate;
+            move = _move;
+            rotate = _rotate;
+        }
+    }
+
     [Serializable]
     private struct Waypoint {
         public Vector2 position;
@@ -85,56 +98,107 @@ public class EnemyController : MonoBehaviour {
         rb = GetComponent<Rigidbody>();
         ev = GetComponent<EnemyVision>();
 
+        statusActionsDictionary = new Dictionary<Status, StatusActions>();
+        statusActionsDictionary[Status.Normal] = new StatusActions(NormalUpdatePath, Move, NormalRotate);
+        statusActionsDictionary[Status.Investigating] = new StatusActions(InvestigatingUpdatePath, Move, InvestigatingRotate);
+        statusActionsDictionary[Status.Alerted] = new StatusActions(AlertedUpdatePath, Move, AlertedRotate);
+
         Physics.IgnoreCollision(parentCollider, childCollider);
 
         SetPathToGlobalWaypoint();
     }
 
     private void FixedUpdate() {
+        StatusActions _statusActions = statusActionsDictionary[status];
+        _statusActions.pathUpdate();
+        _statusActions.move();
+        _statusActions.rotate();
+    }
+
+    private void NormalUpdatePath() {
         bool _atDestination = rb.position == currentDestination;
         bool _atEndOfPath = currentPathIndex == currentPath.Length - 1;
         bool _hasOneWayPoint = globalWaypoints.Length == 1;
 
-        if (isMoving && _atDestination) {
-            if (_atEndOfPath) {
-                if (FollowingGlobalPath) {
-                    isMoving = false;
-                    if (!_hasOneWayPoint) {
-                        StartWaitCoroutine();
-                    }
-                }
-                else if (Investigating) {
-                    StartInvestigativeTurn();
-                    status = Status.Normal;
-                    SetPathToGlobalWaypoint();
-                }
-            }
-            else {
-                AdvanceCurrentPath();
-                UpdateDestination();
-            }
-        }
-        else if (isMoving && _atEndOfPath && Investigating && Math2D.V3ToV3Dist(transform.position, currentDestination) < maxDistToEnd) {
-            StartInvestigativeTurn();
-            status = Status.Normal;
-            SetPathToGlobalWaypoint();
+        if (!isMoving || !_atDestination) {
+            return;
         }
 
-        if (isMoving) {
-            Move();
+        if (_atEndOfPath) {
+            isMoving = false;
+            if (_hasOneWayPoint) {
+                return;
+            }
+            StartWaitCoroutine();
+            return;
         }
 
-        if (FollowingGlobalPath) {
-            if (!isMoving && _atDestination) {
-                RotateTowardsAngle(globalWaypoints[globalWaypointsIndex].rotation);
-            }
-            else if (isMoving && !_atDestination) {
-                RotateWithMovement();
-            }
+        AdvanceCurrentPath();
+        UpdateDestination();
+    }
+
+    private void InvestigatingUpdatePath() {
+        bool _atDestination = rb.position == currentDestination;
+        bool _atEndOfPath = currentPathIndex == currentPath.Length - 1;
+        bool _hasOneWayPoint = globalWaypoints.Length == 1;
+
+        if (!isMoving) {
+            return;
         }
-        else {
-            RotateTowardsTarget(lastTargetLocation);
+
+        if (_atEndOfPath) {
+            if (_atDestination || Math2D.V3ToV3Dist(transform.position, currentDestination) < maxDistToEnd) {
+                StartInvestigativeTurn();
+                SetPathToGlobalWaypoint();
+            }
+            return;
         }
+
+        if (_atDestination) {
+            AdvanceCurrentPath();
+            UpdateDestination();
+        }
+    }
+
+    private void AlertedUpdatePath() {
+        bool _atDestination = rb.position == currentDestination;
+        bool _atEndOfPath = currentPathIndex == currentPath.Length - 1;
+        bool _hasOneWayPoint = globalWaypoints.Length == 1;
+
+        if (Math2D.V3ToV3Dist(transform.position, lastTargetLocation) < minDistToTarget) {
+            isMoving = false;
+            return;
+        }
+
+        if (!isMoving || !_atDestination || _atEndOfPath) {
+            return;
+        }
+
+        AdvanceCurrentPath();
+        UpdateDestination();
+    }
+
+    private void NormalRotate() {
+        bool _atDestination = rb.position == currentDestination;
+
+        if (!isMoving && _atDestination) {
+            RotateTowardsAngle(globalWaypoints[globalWaypointsIndex].rotation);
+        }
+        else if (isMoving && !_atDestination) {
+            RotateWithMovement();
+        }
+    }
+
+    private void InvestigatingRotate() {
+        if (!isMoving) {
+            return;
+        }
+
+        RotateTowardsTarget(lastTargetLocation);
+    }
+
+    private void AlertedRotate() {
+        RotateTowardsTarget(lastTargetLocation);
     }
 
     private void StartWaitCoroutine() {
@@ -167,7 +231,7 @@ public class EnemyController : MonoBehaviour {
     // Set new local path
     private void SetNewPath(Vector2 _target, bool _constrained = false) {
         if (_constrained) {
-            currentPath = Pathfinding.instance.FindPath(transform.position, Math2D.V2ToV3AtZero(_target), maxAlertedPathLength, ev.visionRange, false, false);
+            currentPath = Pathfinding.instance.FindPath(transform.position, Math2D.V2ToV3AtZero(_target), maxAlertedPathLength, ev.visionRange);
         }
         else {
             currentPath = Pathfinding.instance.FindPath(transform.position, Math2D.V2ToV3AtZero(_target));
@@ -189,8 +253,7 @@ public class EnemyController : MonoBehaviour {
 
     // Move the enemy towards its next destination in the local path
     private void Move() {
-        if (Alerted && Math2D.V3ToV3Dist(transform.position, lastTargetLocation) < minDistToTarget) {
-            isMoving = false;
+        if (!isMoving) {
             return;
         }
 
@@ -274,6 +337,7 @@ public class EnemyController : MonoBehaviour {
             rb.MoveRotation(rb.rotation * Quaternion.Euler(0f, _turnAngle, 0f));
             _angleTurned += _turnAngle;
         }
+        status = Status.Normal;
         isMoving = true;
     }
 

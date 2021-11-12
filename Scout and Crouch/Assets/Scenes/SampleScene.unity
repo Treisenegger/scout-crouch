@@ -1666,16 +1666,14 @@ MonoBehaviour:
   rotationSpeed: 180
   investigationTurnDuration: 1.5
   turnUpdateFreq: 30
-  movementGrid: {fileID: 1856860870}
   minDistToTarget: 1
   maxAlertedPathLength: 6
   maxDistToEnd: 0.1
+  movementGrid: {fileID: 1856860870}
+  waitTime: 2
   globalWaypoints:
-  - position: {x: 6.5, y: -0.5}
-    rotation: 180
   - position: {x: -5.5, y: 4.5}
     rotation: 0
-  waitTime: 2
 --- !u!114 &1523417765
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1696,7 +1694,7 @@ MonoBehaviour:
   obstacleMask:
     serializedVersion: 2
     m_Bits: 256
-  targetDetectionFreq: 30
+  targetDetectionFreq: 45
   crouchHeight: {fileID: 11400000, guid: 9c561fa395f6de9479d6c4546c2ede98, type: 2}
   uprightHeight: {fileID: 11400000, guid: 26b9042aca20f6c4e9dfc673d030945e, type: 2}
   visionResolution: 0.5
