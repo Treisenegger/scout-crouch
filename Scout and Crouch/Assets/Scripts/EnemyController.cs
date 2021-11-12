@@ -194,11 +194,11 @@ public class EnemyController : MonoBehaviour {
             return;
         }
 
-        RotateTowardsTarget(lastTargetLocation);
+        SnapToTarget(lastTargetLocation);
     }
 
     private void AlertedRotate() {
-        RotateTowardsTarget(lastTargetLocation);
+        SnapToTarget(lastTargetLocation);
     }
 
     private void StartWaitCoroutine() {
@@ -287,7 +287,7 @@ public class EnemyController : MonoBehaviour {
     }
 
     // Set rotation to look at the player's last location
-    private void RotateTowardsTarget(Vector3 _targetPos) {
+    private void SnapToTarget(Vector3 _targetPos) {
         rb.MoveRotation(Quaternion.LookRotation(Math2D.V3ToV3Dir(transform.position, _targetPos), Vector3.up));
     }
 
