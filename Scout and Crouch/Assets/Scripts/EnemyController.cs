@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using System;
 
-// TODO: - Implement wait time on global waypoints and target rotation
-
 [RequireComponent(typeof(Rigidbody))]
 [RequireComponent(typeof(EnemyVision))]
 public class EnemyController : MonoBehaviour {

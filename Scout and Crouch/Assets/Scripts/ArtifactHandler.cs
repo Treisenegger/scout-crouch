@@ -14,7 +14,7 @@ public class ArtifactHandler : MonoBehaviour {
     Plane artifactPlane;
 
     private void Start() {
-        artifactPlane = new Plane(Vector3.up, Math2D.V3AtHeight(Vector3.zero, uprightHeight.Value));
+        artifactPlane = new Plane(Vector3.up, -uprightHeight.Value);
     }
 
     private void Update() {
