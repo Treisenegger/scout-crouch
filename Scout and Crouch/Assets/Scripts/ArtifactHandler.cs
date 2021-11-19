@@ -57,9 +57,8 @@ public class ArtifactHandler : MonoBehaviour {
 
         _linePoints.Add(_hit.point);
         float _remainingDist = _maxDist - _hit.distance;
-        int _remainingBounces = _maxBounces;
 
-        while (_remainingBounces > 0) {
+        for (int i = 0; i < _maxBounces; i++) {
             _dir = _dir + 2 * Vector3.Dot(-_dir, _hit.normal) * _hit.normal;
             _ray = new Ray(_hit.point, _dir);
             if (!Physics.Raycast(_ray, out _hit, _remainingDist, obstacleMask)) {
@@ -68,11 +67,9 @@ public class ArtifactHandler : MonoBehaviour {
             }
             _linePoints.Add(_hit.point);
             _remainingDist -= _hit.distance;
-            _remainingBounces--;
         }
 
         return _linePoints;
-
     }
 
     private Vector3 GetMousePosition() {
