@@ -31,54 +31,48 @@ public class ArtifactHandler : MonoBehaviour {
     }
 
     private void OudDrawTrajectory() {
-        Vector3 _mousePos = GetMousePosition();
-        List<Vector3> _linePoints = new List<Vector3>();
-        _linePoints.Add(Math2D.V3AtHeight(transform.position, uprightHeight.Value));
-
-        Ray _ray = new Ray(Math2D.V3AtHeight(transform.position, uprightHeight.Value), Math2D.V3ToV3Dir(transform.position, _mousePos));
-        RaycastHit _hit;
-        if (Physics.Raycast(_ray, out _hit, maxRaycastDist, obstacleMask)) {
-            _linePoints.Add(_hit.point);
-        }
-        else {
-            _linePoints.Add(_ray.GetPoint(maxRaycastDist));
-        }
-
-        UpdateLineRenderer(_linePoints);
+        UpdateLineRenderer(GetTrajectoryToMouse(0, maxRaycastDist));
     }
 
     private void BugleDrawTrajectory() {
-        Vector3 _mousePos = GetMousePosition();
-        List<Vector3> _linePoints = new List<Vector3>();
-        _linePoints.Add(Math2D.V3AtHeight(transform.position, uprightHeight.Value));
+        UpdateLineRenderer(GetTrajectoryToMouse(maxBugleBounces, maxRaycastDist));
+    }
 
+    private List<Vector3> GetTrajectoryToMouse(int _maxBounces = 0, float _maxDist = 0f) {
+        Vector3 _mousePos = GetMousePosition();
         Vector3 _dir = Math2D.V3ToV3Dir(transform.position, _mousePos);
-        Ray _ray = new Ray(Math2D.V3AtHeight(transform.position, uprightHeight.Value), _dir);
+        return GetBouncingTrajectory(Math2D.V3AtHeight(transform.position, uprightHeight.Value), _dir, _maxBounces, _maxDist);
+    }
+
+    private List<Vector3> GetBouncingTrajectory(Vector3 _startPos, Vector3 _dir, int _maxBounces = 0, float _maxDist = 0f) {
+        List<Vector3> _linePoints = new List<Vector3>();
+        _linePoints.Add(_startPos);
+        Ray _ray = new Ray(_startPos, _dir);
         RaycastHit _hit;
 
-        if (!Physics.Raycast(_ray, out _hit, maxRaycastDist, obstacleMask)) {
-            _linePoints.Add(_ray.GetPoint(maxRaycastDist));
-            UpdateLineRenderer(_linePoints);
-            return;
+        if (!Physics.Raycast(_ray, out _hit, _maxDist, obstacleMask)) {
+            _linePoints.Add(_ray.GetPoint(_maxDist));
+            return _linePoints;
         }
 
         _linePoints.Add(_hit.point);
-        float _remainingDist = maxRaycastDist - _hit.distance;
-        int _remainingBounces = maxBugleBounces;
+        float _remainingDist = _maxDist - _hit.distance;
+        int _remainingBounces = _maxBounces;
 
         while (_remainingBounces > 0) {
             _dir = _dir + 2 * Vector3.Dot(-_dir, _hit.normal) * _hit.normal;
             _ray = new Ray(_hit.point, _dir);
             if (!Physics.Raycast(_ray, out _hit, _remainingDist, obstacleMask)) {
                 _linePoints.Add(_ray.GetPoint(_remainingDist));
-                break;
+                return _linePoints;
             }
             _linePoints.Add(_hit.point);
             _remainingDist -= _hit.distance;
             _remainingBounces--;
         }
 
-        UpdateLineRenderer(_linePoints);
+        return _linePoints;
+
     }
 
     private Vector3 GetMousePosition() {
