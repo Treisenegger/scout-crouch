@@ -455,7 +455,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 1380419080}
-  m_RootOrder: 14
+  m_RootOrder: 12
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!65 &497491675
 BoxCollider:
@@ -705,7 +705,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 1380419080}
-  m_RootOrder: 12
+  m_RootOrder: 13
   m_LocalEulerAnglesHint: {x: 42.895, y: 291.225, z: -28.669}
 --- !u!1 &718585927
 GameObject:
@@ -1150,6 +1150,7 @@ GameObject:
   - component: {fileID: 963194228}
   - component: {fileID: 963194227}
   - component: {fileID: 963194226}
+  - component: {fileID: 963194229}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -1215,13 +1216,26 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 963194225}
-  m_LocalRotation: {x: 0.58822095, y: -0, z: -0, w: 0.8087002}
-  m_LocalPosition: {x: -0.2166853, y: 12.93, z: -5.01}
+  m_LocalRotation: {x: 0.4552387, y: -0, z: -0, w: 0.8903695}
+  m_LocalPosition: {x: -0.38, y: 18.4, z: -13}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 1380419080}
-  m_RootOrder: 13
-  m_LocalEulerAnglesHint: {x: 72.062, y: 0, z: 0}
+  m_RootOrder: 14
+  m_LocalEulerAnglesHint: {x: 54.161, y: 0, z: 0}
+--- !u!114 &963194229
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 963194225}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 679a3f5c766d05144a8e4bce29a32add, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  playerTransform: {fileID: 1322736683}
 --- !u!1 &995998626
 GameObject:
   m_ObjectHideFlags: 0
@@ -1506,13 +1520,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 23ed885989f26e24da2ee723b7816244, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  uprightHeight: {fileID: 11400000, guid: 26b9042aca20f6c4e9dfc673d030945e, type: 2}
-  movementGrid: {fileID: 1856860870}
+  maxBugleBounces: 3
   maxRaycastDist: 10
+  uprightHeight: {fileID: 11400000, guid: 26b9042aca20f6c4e9dfc673d030945e, type: 2}
   obstacleMask:
     serializedVersion: 2
     m_Bits: 256
   lineRenderer: {fileID: 801911090}
+  movementGrid: {fileID: 1856860870}
 --- !u!1 &1347202257
 GameObject:
   m_ObjectHideFlags: 0
@@ -1677,9 +1692,9 @@ Transform:
   - {fileID: 1375141482}
   - {fileID: 1445569536}
   - {fileID: 1626205804}
+  - {fileID: 497491674}
   - {fileID: 705507995}
   - {fileID: 963194228}
-  - {fileID: 497491674}
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
